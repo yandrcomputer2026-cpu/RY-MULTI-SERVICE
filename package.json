@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "@prisma/adapter-mariadb": "^7.10.0",
-    "mariadb": "^3.5.3"
-  }
-}
