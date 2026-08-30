@@ -28,6 +28,7 @@ model transaction {
   @@index([service], map: "Transaction_service_idx")
   @@index([status], map: "Transaction_status_idx")
   @@index([userId], map: "Transaction_userId_idx")
+  @@map("Transaction")
 }
 
 model user {
@@ -38,4 +39,5 @@ model user {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   mobile    String   @unique(map: "User_mobile_key")
+  @@map("User")
 }

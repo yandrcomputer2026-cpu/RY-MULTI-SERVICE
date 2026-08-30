@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE `transaction` MODIFY `description` TEXT NULL;
+ALTER TABLE `Transaction` MODIFY `description` TEXT NULL;
