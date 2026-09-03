@@ -116,6 +116,30 @@ type ParsedDescription = {
 };
 
 // ===============================
+// SAFE DESCRIPTION PARSER
+// ===============================
+
+function parseDescription(
+  description: string | null
+): ParsedDescription {
+  if (!description) {
+    return {};
+  }
+
+  const value = description.trim();
+
+  if (!value.startsWith("{")) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(value) as ParsedDescription;
+  } catch {
+    return {};
+  }
+}
+
+// ===============================
 // TITLE
 // ===============================
 
@@ -192,6 +216,61 @@ function getIcon(service: string) {
 }
 
 // ===============================
+// STATUS HELPERS
+// ===============================
+
+function getStatusClasses(status: string) {
+  const normalizedStatus =
+    status.toUpperCase();
+
+  if (
+    normalizedStatus === "SUCCESS" ||
+    normalizedStatus === "RECHARGE_SUCCESS"
+  ) {
+    return "bg-green-100 text-green-700";
+  }
+
+  if (
+    normalizedStatus === "FAILED" ||
+    normalizedStatus === "RECHARGE_FAILED"
+  ) {
+    return "bg-red-100 text-red-700";
+  }
+
+  return "bg-yellow-100 text-yellow-700";
+}
+
+function isSuccessStatus(status: string) {
+  const normalizedStatus =
+    status.toUpperCase();
+
+  return (
+    normalizedStatus === "SUCCESS" ||
+    normalizedStatus === "RECHARGE_SUCCESS"
+  );
+}
+
+function isPendingStatus(status: string) {
+  const normalizedStatus =
+    status.toUpperCase();
+
+  return (
+    normalizedStatus === "PENDING" ||
+    normalizedStatus === "PAYMENT_PENDING"
+  );
+}
+
+function isFailedStatus(status: string) {
+  const normalizedStatus =
+    status.toUpperCase();
+
+  return (
+    normalizedStatus === "FAILED" ||
+    normalizedStatus === "RECHARGE_FAILED"
+  );
+}
+
+// ===============================
 // PAGE
 // ===============================
 
@@ -263,21 +342,10 @@ export default async function HistoryPage() {
 
             {transactions.map(
               (transaction) => {
-                let details: ParsedDescription =
-                  {};
-
-                try {
-                  if (
+                const details =
+                  parseDescription(
                     transaction.description
-                  ) {
-                    details =
-                      JSON.parse(
-                        transaction.description
-                      );
-                  }
-                } catch {
-                  details = {};
-                }
+                  );
 
                 const title =
                   getTitle(
@@ -288,6 +356,26 @@ export default async function HistoryPage() {
                 const icon =
                   getIcon(
                     transaction.service
+                  );
+
+                const status =
+                  String(
+                    transaction.status ||
+                    "PENDING"
+                  ).toUpperCase();
+
+                const isSuccess =
+                  isSuccessStatus(status);
+
+                const isPending =
+                  isPendingStatus(status);
+
+                const isFailed =
+                  isFailedStatus(status);
+
+                const amount =
+                  Number(
+                    transaction.amount
                   );
 
                 return (
@@ -322,19 +410,11 @@ export default async function HistoryPage() {
                           </div>
 
                           <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                              transaction.status ===
-                              "SUCCESS"
-                                ? "bg-green-100 text-green-700"
-                                : transaction.status ===
-                                  "FAILED"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-yellow-100 text-yellow-700"
-                            }`}
+                            className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(
+                              status
+                            )}`}
                           >
-                            {
-                              transaction.status
-                            }
+                            {status}
                           </span>
                         </div>
 
@@ -368,12 +448,39 @@ export default async function HistoryPage() {
 
                         <p className="text-2xl font-bold text-blue-600">
                           ₹
-                          {Number(
-                            transaction.amount
-                          ).toFixed(2)}
+                          {Number.isFinite(amount)
+                            ? amount.toFixed(2)
+                            : "0.00"}
                         </p>
                       </div>
                     </div>
+
+                    {/* ================= STATUS NOTICE ================= */}
+
+                    {isPending && (
+                      <div className="mt-5 rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+                        <p className="font-semibold text-yellow-800">
+                          ⏳ Payment Pending
+                        </p>
+
+                        <p className="mt-1 text-sm text-yellow-700">
+                          यह booking अभी confirmed नहीं है।
+                          Payment successful होने के बाद ही इसे confirmed ticket माना जाएगा।
+                        </p>
+                      </div>
+                    )}
+
+                    {isFailed && (
+                      <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4">
+                        <p className="font-semibold text-red-700">
+                          ❌ Payment / Booking Failed
+                        </p>
+
+                        <p className="mt-1 text-sm text-red-600">
+                          यह transaction सफल नहीं हुआ।
+                        </p>
+                      </div>
+                    )}
 
                     {/* ================= COMMON DETAILS ================= */}
 
@@ -676,7 +783,8 @@ export default async function HistoryPage() {
                       {/* TRAIN */}
 
                       {transaction.service ===
-                        "TRAIN_BOOKING" && (
+                        "TRAIN_BOOKING" &&
+                        isSuccess && (
                         <Link
                           href={`/history/train/${transaction.transactionId}`}
                           className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
@@ -688,7 +796,8 @@ export default async function HistoryPage() {
                       {/* FLIGHT */}
 
                       {transaction.service ===
-                        "FLIGHT_BOOKING" && (
+                        "FLIGHT_BOOKING" &&
+                        isSuccess && (
                         <Link
                           href={`/history/flight/${transaction.transactionId}`}
                           className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
@@ -697,10 +806,11 @@ export default async function HistoryPage() {
                         </Link>
                       )}
 
-                      {/* BUS */}
+                      {/* BUS SUCCESS */}
 
                       {transaction.service ===
-                        "BUS_BOOKING" && (
+                        "BUS_BOOKING" &&
+                        isSuccess && (
                         <Link
                           href={`/history/bus/${transaction.transactionId}`}
                           className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
@@ -709,10 +819,52 @@ export default async function HistoryPage() {
                         </Link>
                       )}
 
+                      {/* BUS PENDING */}
+
+                      {transaction.service ===
+                        "BUS_BOOKING" &&
+                        isPending && (
+                        <>
+                          <Link
+                            href={`/service2/bus/payment?transactionId=${encodeURIComponent(
+                              transaction.transactionId
+                            )}&amount=${encodeURIComponent(
+                              Number.isFinite(amount)
+                                ? String(amount)
+                                : "0"
+                            )}`}
+                            className="rounded-lg bg-yellow-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-yellow-600"
+                          >
+                            💳 Complete Payment
+                          </Link>
+
+                          <Link
+                            href={`/history/bus/${transaction.transactionId}`}
+                            className="rounded-lg border border-blue-300 px-5 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
+                          >
+                            🚌 View Bus Details
+                          </Link>
+                        </>
+                      )}
+
+                      {/* BUS FAILED */}
+
+                      {transaction.service ===
+                        "BUS_BOOKING" &&
+                        isFailed && (
+                        <Link
+                          href="/service2/bus"
+                          className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+                        >
+                          ↻ Book Bus Again
+                        </Link>
+                      )}
+
                       {/* HOTEL */}
 
                       {transaction.service ===
-                        "HOTEL_BOOKING" && (
+                        "HOTEL_BOOKING" &&
+                        isSuccess && (
                         <Link
                           href={`/history/hotel/${transaction.transactionId}`}
                           className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"

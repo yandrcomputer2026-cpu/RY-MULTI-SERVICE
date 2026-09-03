@@ -42,7 +42,6 @@ export default async function Service1Page() {
         </div>
       </header>
 
-
       {/* ================= MAIN CONTENT ================= */}
       <div className="max-w-6xl mx-auto px-6 py-10">
 
@@ -57,20 +56,20 @@ export default async function Service1Page() {
           </p>
 
           <p className="text-gray-500 mt-1">
-            Recharge, bill payment और payment history की सुविधा।
+            Recharge और bill payment की सुविधाएँ।
           </p>
         </div>
-
 
         {/* ================= SERVICES ================= */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
 
-
           {/* 1. PREPAID RECHARGE */}
           <Link href="/service1/mobile-prepaid">
 
-            <div className="bg-white rounded-xl shadow p-6 h-full
-              hover:shadow-lg hover:-translate-y-1 transition cursor-pointer">
+            <div
+              className="bg-white rounded-xl shadow p-6 h-full
+              hover:shadow-lg hover:-translate-y-1 transition cursor-pointer"
+            >
 
               <div className="text-4xl">
                 📱
@@ -92,12 +91,13 @@ export default async function Service1Page() {
 
           </Link>
 
-
           {/* 2. POSTPAID RECHARGE */}
           <Link href="/service1/mobile-postpaid">
 
-            <div className="bg-white rounded-xl shadow p-6 h-full
-              hover:shadow-lg hover:-translate-y-1 transition cursor-pointer">
+            <div
+              className="bg-white rounded-xl shadow p-6 h-full
+              hover:shadow-lg hover:-translate-y-1 transition cursor-pointer"
+            >
 
               <div className="text-4xl">
                 📱
@@ -119,12 +119,13 @@ export default async function Service1Page() {
 
           </Link>
 
-
           {/* 3. DTH RECHARGE */}
           <Link href="/service1/dth">
 
-            <div className="bg-white rounded-xl shadow p-6 h-full
-              hover:shadow-lg hover:-translate-y-1 transition cursor-pointer">
+            <div
+              className="bg-white rounded-xl shadow p-6 h-full
+              hover:shadow-lg hover:-translate-y-1 transition cursor-pointer"
+            >
 
               <div className="text-4xl">
                 📺
@@ -146,12 +147,13 @@ export default async function Service1Page() {
 
           </Link>
 
-
           {/* 4. ELECTRICITY */}
           <Link href="/service1/electricity">
 
-            <div className="bg-white rounded-xl shadow p-6 h-full
-              hover:shadow-lg hover:-translate-y-1 transition cursor-pointer">
+            <div
+              className="bg-white rounded-xl shadow p-6 h-full
+              hover:shadow-lg hover:-translate-y-1 transition cursor-pointer"
+            >
 
               <div className="text-4xl">
                 💡
@@ -173,35 +175,7 @@ export default async function Service1Page() {
 
           </Link>
 
-
-          {/* 5. PAYMENT HISTORY */}
-          <Link href="/history">
-
-            <div className="bg-white rounded-xl shadow p-6 h-full
-              hover:shadow-lg hover:-translate-y-1 transition cursor-pointer">
-
-              <div className="text-4xl">
-                📊
-              </div>
-
-              <h3 className="text-xl font-bold text-gray-900 mt-4">
-                Payment History
-              </h3>
-
-              <p className="text-gray-500 mt-2">
-                अपने सभी payment और recharge की history देखें।
-              </p>
-
-              <p className="text-blue-600 font-semibold mt-5">
-                History देखें →
-              </p>
-
-            </div>
-
-          </Link>
-
         </div>
-
 
         {/* ================= BACK BUTTON ================= */}
         <div className="mt-10">
