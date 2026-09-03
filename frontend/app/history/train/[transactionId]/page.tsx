@@ -6,36 +6,27 @@ import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-type FlightDescription = {
-  airline?: string;
-  airlineName?: string;
-  flightNo?: string;
-  flightNumber?: string;
+type Passenger = {
+  name?: string;
+  age?: string;
+  gender?: string;
+  berthPreference?: string;
+};
 
+type TrainDescription = {
+  trainNo?: string;
+  trainName?: string;
   from?: string;
   to?: string;
-
-  departure?: string;
-  arrival?: string;
-  duration?: string;
-
   journeyDate?: string;
-  date?: string;
-
   travelClass?: string;
-  cabinClass?: string;
-
-  passengers?: number;
-
-  passengerList?: Array<{
-    name?: string;
-    age?: string;
-    gender?: string;
-  }>;
-
+  passengerList?: Passenger[];
   baseFare?: number;
   convenienceFee?: number;
   totalAmount?: number;
+  departure?: string;
+  arrival?: string;
+  duration?: string;
 };
 
 type PageProps = {
@@ -44,7 +35,7 @@ type PageProps = {
   }>;
 };
 
-export default async function FlightTicketPage({
+export default async function TrainTicketPage({
   params,
 }: PageProps) {
   const user = await getCurrentUser();
@@ -59,7 +50,7 @@ export default async function FlightTicketPage({
     where: {
       transactionId,
       userId: user.id,
-      service: "FLIGHT_BOOKING",
+      service: "TRAIN_BOOKING",
     },
   });
 
@@ -67,7 +58,7 @@ export default async function FlightTicketPage({
     notFound();
   }
 
-  let details: FlightDescription = {};
+  let details: TrainDescription = {};
 
   try {
     if (transaction.description) {
@@ -77,26 +68,6 @@ export default async function FlightTicketPage({
     details = {};
   }
 
-  const airline =
-    details.airlineName ||
-    details.airline ||
-    "Flight Booking";
-
-  const flightNo =
-    details.flightNumber ||
-    details.flightNo ||
-    "-";
-
-  const journeyDate =
-    details.journeyDate ||
-    details.date ||
-    "-";
-
-  const travelClass =
-    details.travelClass ||
-    details.cabinClass ||
-    "-";
-
   const passengerList = Array.isArray(details.passengerList)
     ? details.passengerList
     : [];
@@ -104,38 +75,42 @@ export default async function FlightTicketPage({
   const totalAmount =
     details.totalAmount ?? Number(transaction.amount);
 
+  const baseFare =
+    details.baseFare ?? Number(transaction.amount);
+
+  const convenienceFee =
+    details.convenienceFee ?? 0;
+
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-8">
       <div className="mx-auto max-w-4xl">
 
-        {/* HEADER */}
         <div className="mb-6 text-center">
           <p className="text-sm font-semibold text-blue-600">
             RY MULTI SERVICE
           </p>
 
           <h1 className="mt-2 text-3xl font-bold text-gray-900">
-            ✈️ Flight Ticket
+            🎫 Train Ticket
           </h1>
 
           <p className="mt-2 text-sm text-green-600">
-            आपकी flight booking details
+            आपकी confirmed train booking details
           </p>
         </div>
 
-        {/* SUCCESS */}
         <div className="rounded-2xl border border-green-200 bg-green-50 p-6">
           <h2 className="text-xl font-bold text-green-800">
             Booking {transaction.status} ✅
           </h2>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <p className="text-xs text-green-700">
-                Transaction ID
+                Booking ID
               </p>
 
-              <p className="break-all font-bold text-green-900">
+              <p className="font-bold text-green-900">
                 {transaction.transactionId}
               </p>
             </div>
@@ -152,38 +127,31 @@ export default async function FlightTicketPage({
           </div>
         </div>
 
-        {/* FLIGHT DETAILS */}
         <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
           <h2 className="text-xl font-bold text-gray-900">
-            Flight Details
+            Train Details
           </h2>
 
           <div className="mt-5 border-b border-gray-200 pb-5">
             <p className="text-lg font-bold text-gray-900">
-              {airline}
+              {details.trainName || "Train Booking"}
             </p>
 
             <p className="mt-1 text-sm text-gray-500">
-              Flight No: {flightNo}
+              Train No: {details.trainNo || "-"}
             </p>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-5 md:grid-cols-4">
             <div>
-              <p className="text-xs text-gray-500">
-                From
-              </p>
-
+              <p className="text-xs text-gray-500">From</p>
               <p className="font-semibold text-gray-900">
                 {details.from || "-"}
               </p>
             </div>
 
             <div>
-              <p className="text-xs text-gray-500">
-                To
-              </p>
-
+              <p className="text-xs text-gray-500">To</p>
               <p className="font-semibold text-gray-900">
                 {details.to || "-"}
               </p>
@@ -193,19 +161,15 @@ export default async function FlightTicketPage({
               <p className="text-xs text-gray-500">
                 Journey Date
               </p>
-
               <p className="font-semibold text-gray-900">
-                {journeyDate}
+                {details.journeyDate || "-"}
               </p>
             </div>
 
             <div>
-              <p className="text-xs text-gray-500">
-                Class
-              </p>
-
+              <p className="text-xs text-gray-500">Class</p>
               <p className="font-semibold text-gray-900">
-                {travelClass}
+                {details.travelClass || "-"}
               </p>
             </div>
           </div>
@@ -215,7 +179,6 @@ export default async function FlightTicketPage({
               <p className="text-xs text-gray-500">
                 Departure
               </p>
-
               <p className="font-semibold text-gray-900">
                 {details.departure || "-"}
               </p>
@@ -225,7 +188,6 @@ export default async function FlightTicketPage({
               <p className="text-xs text-gray-500">
                 Arrival
               </p>
-
               <p className="font-semibold text-gray-900">
                 {details.arrival || "-"}
               </p>
@@ -235,7 +197,6 @@ export default async function FlightTicketPage({
               <p className="text-xs text-gray-500">
                 Duration
               </p>
-
               <p className="font-semibold text-gray-900">
                 {details.duration || "-"}
               </p>
@@ -243,7 +204,6 @@ export default async function FlightTicketPage({
           </div>
         </div>
 
-        {/* PASSENGERS */}
         <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
           <h2 className="text-xl font-bold text-gray-900">
             Passenger Details
@@ -261,16 +221,14 @@ export default async function FlightTicketPage({
                   className="rounded-xl border border-gray-200 p-4"
                 >
                   <p className="font-bold text-gray-900">
-                    Passenger {index + 1}:{" "}
-                    {passenger.name || "-"}
+                    Passenger {index + 1}: {passenger.name || "-"}
                   </p>
 
-                  <div className="mt-3 grid grid-cols-2 gap-4">
+                  <div className="mt-3 grid grid-cols-2 gap-4 md:grid-cols-3">
                     <div>
                       <p className="text-xs text-gray-500">
                         Age
                       </p>
-
                       <p className="font-medium text-gray-900">
                         {passenger.age || "-"}
                       </p>
@@ -280,9 +238,17 @@ export default async function FlightTicketPage({
                       <p className="text-xs text-gray-500">
                         Gender
                       </p>
-
                       <p className="font-medium text-gray-900">
                         {passenger.gender || "-"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-gray-500">
+                        Berth Preference
+                      </p>
+                      <p className="font-medium text-gray-900">
+                        {passenger.berthPreference || "-"}
                       </p>
                     </div>
                   </div>
@@ -292,53 +258,57 @@ export default async function FlightTicketPage({
           )}
         </div>
 
-        {/* PAYMENT */}
         <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
           <h2 className="text-xl font-bold text-gray-900">
-            Payment Details
+            Fare Details
           </h2>
 
-          <div className="mt-5 flex items-center justify-between">
-            <span className="text-lg font-bold text-gray-900">
-              Total Paid
-            </span>
-
-            <span className="text-3xl font-bold text-green-600">
-              ₹{totalAmount}
-            </span>
-          </div>
-
-          <div className="mt-5 space-y-2 border-t border-gray-100 pt-4 text-sm text-gray-600">
-            <p>
-              Provider:{" "}
-              <span className="font-semibold text-gray-900">
-                {transaction.provider || "-"}
+          <div className="mt-5 space-y-4">
+            <div className="flex justify-between border-b border-gray-100 pb-3">
+              <span className="text-gray-600">
+                Base Fare
               </span>
-            </p>
 
-            <p>
-              Booked On:{" "}
               <span className="font-semibold text-gray-900">
-                {transaction.createdAt.toLocaleString("en-IN")}
+                ₹{baseFare}
               </span>
-            </p>
+            </div>
+
+            <div className="flex justify-between border-b border-gray-100 pb-3">
+              <span className="text-gray-600">
+                Convenience Fee
+              </span>
+
+              <span className="font-semibold text-gray-900">
+                ₹{convenienceFee}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-lg font-bold text-gray-900">
+                Total Paid
+              </span>
+
+              <span className="text-3xl font-bold text-green-600">
+                ₹{totalAmount}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* BUTTONS */}
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
           <Link
             href="/history"
-            className="w-full rounded-lg border border-gray-300 bg-white px-5 py-3 text-center font-semibold text-gray-700 hover:bg-gray-50"
+            className="w-full rounded-lg border border-gray-300 bg-white px-5 py-3 text-center font-semibold text-gray-700 transition hover:bg-gray-50"
           >
             ← My History
           </Link>
 
           <Link
-            href="/service2/flight"
-            className="w-full rounded-lg bg-blue-600 px-5 py-3 text-center font-semibold text-white hover:bg-blue-700"
+            href="/service2/train"
+            className="w-full rounded-lg bg-blue-600 px-5 py-3 text-center font-semibold text-white transition hover:bg-blue-700"
           >
-            Book Another Flight →
+            Book Another Train →
           </Link>
         </div>
 

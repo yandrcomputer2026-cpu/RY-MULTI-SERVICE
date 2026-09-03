@@ -4,11 +4,11 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import LogoutButton from "./LogoutButton";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
-  // Current logged-in user
   const user = await getCurrentUser();
 
-  // Login नहीं है तो login page पर भेजें
   if (!user) {
     redirect("/login");
   }
@@ -18,14 +18,12 @@ export default async function DashboardPage() {
 
       {/* ================= HEADER ================= */}
       <header className="bg-white shadow-sm px-6 py-4">
-        <div className="flex items-center justify-between">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
 
-          {/* Logo */}
           <h1 className="text-xl font-bold text-blue-700">
             RY MULTI SERVICE
           </h1>
 
-          {/* Navigation */}
           <div className="flex items-center gap-6">
 
             <Link
@@ -35,27 +33,35 @@ export default async function DashboardPage() {
               Home
             </Link>
 
+            <Link
+              href="/history"
+              className="text-gray-600 hover:text-blue-600"
+            >
+              My History
+            </Link>
+
             <LogoutButton />
 
           </div>
         </div>
       </header>
 
+
       {/* ================= DASHBOARD ================= */}
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className="mx-auto max-w-6xl px-6 py-10">
 
         {/* Welcome */}
         <h2 className="text-3xl font-bold text-gray-900">
           Welcome {user.name} 👋
         </h2>
 
-        <p className="text-gray-600 mt-2">
+        <p className="mt-2 text-gray-600">
           आपका Login सफल हो गया है।
         </p>
 
 
         {/* ================= PROFILE ================= */}
-        <div className="bg-white rounded-xl shadow p-6 mt-8">
+        <div className="mt-8 rounded-xl bg-white p-6 shadow">
 
           <h3 className="text-2xl font-bold text-gray-900">
             आपकी Profile
@@ -85,64 +91,87 @@ export default async function DashboardPage() {
             </p>
 
           </div>
-
         </div>
 
 
+        {/* ================= MY HISTORY ================= */}
+        <Link
+          href="/history"
+          className="mt-8 block rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white shadow transition hover:-translate-y-1 hover:shadow-lg"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+            <div>
+              <div className="text-3xl">
+                📋
+              </div>
+
+              <h3 className="mt-2 text-2xl font-bold">
+                My History
+              </h3>
+
+              <p className="mt-2 text-blue-100">
+                अपनी सभी bookings और transactions एक ही जगह देखें।
+              </p>
+            </div>
+
+            <div className="text-lg font-semibold">
+              View History →
+            </div>
+
+          </div>
+        </Link>
+
+
         {/* ================= SERVICES ================= */}
-        <div className="grid md:grid-cols-3 gap-6 mt-8">
+        <div className="mt-8 grid gap-6 md:grid-cols-3">
 
-       {/* Service 1 */}
-<Link
-  href="/service1"
-  className="block bg-white rounded-xl shadow p-6 hover:shadow-lg hover:-translate-y-1 transition cursor-pointer"
->
-  <h3 className="text-xl font-bold text-gray-900">
-    Service 1
-  </h3>
+          {/* Service 1 */}
+          <Link
+            href="/service1"
+            className="block cursor-pointer rounded-xl bg-white p-6 shadow transition hover:-translate-y-1 hover:shadow-lg"
+          >
+            <h3 className="text-xl font-bold text-gray-900">
+              Service 1
+            </h3>
 
-  <p className="text-gray-500 mt-2">
-    यहाँ आपकी पहली service आएगी।
-  </p>
+            <p className="mt-2 text-gray-500">
+              यहाँ आपकी पहली service आएगी।
+            </p>
 
-  <p className="text-blue-600 font-semibold mt-4">
-    Service 1 खोलें →
-  </p>
-</Link>
+            <p className="mt-4 font-semibold text-blue-600">
+              Service 1 खोलें →
+            </p>
+          </Link>
 
 
           {/* Service 2 */}
-          <div className="bg-white rounded-xl shadow p-6">
-
-            <h3 className="text-xl font-bold">
+          <Link
+            href="/service2"
+            className="block cursor-pointer rounded-xl bg-white p-6 shadow transition hover:-translate-y-1 hover:shadow-lg"
+          >
+            <h3 className="text-xl font-bold text-gray-900">
               Service 2
             </h3>
 
-            <p className="text-gray-500 mt-2">
+            <p className="mt-2 text-gray-500">
               यहाँ आपकी दूसरी service आएगी।
             </p>
-<Link
-    href="/service2"
-    className="inline-block mt-5
-      bg-blue-600 text-white
-      px-5 py-2.5 rounded-lg
-      font-semibold
-      hover:bg-blue-700 transition"
-  >
-    Service 2 खोलें →
-  </Link>
 
-          </div>
+            <p className="mt-4 font-semibold text-blue-600">
+              Service 2 खोलें →
+            </p>
+          </Link>
 
 
           {/* Service 3 */}
-          <div className="bg-white rounded-xl shadow p-6">
+          <div className="rounded-xl bg-white p-6 shadow">
 
-            <h3 className="text-xl font-bold">
+            <h3 className="text-xl font-bold text-gray-900">
               Service 3
             </h3>
 
-            <p className="text-gray-500 mt-2">
+            <p className="mt-2 text-gray-500">
               यहाँ आपकी तीसरी service आएगी।
             </p>
 

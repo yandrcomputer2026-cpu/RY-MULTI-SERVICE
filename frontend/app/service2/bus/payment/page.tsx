@@ -639,7 +639,7 @@ function BusPaymentContent() {
                 type="button"
                 onClick={() =>
                   router.push(
-                    "/service1/history"
+                    "/history"
                   )
                 }
                 className="w-full mt-3 bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 rounded-lg"

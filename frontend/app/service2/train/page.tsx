@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function TrainPage() {
+  const router = useRouter();
+
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [journeyDate, setJourneyDate] = useState("");
@@ -12,28 +15,27 @@ export default function TrainPage() {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!from || !to || !journeyDate) {
+    if (!from.trim() || !to.trim() || !journeyDate) {
       alert("कृपया From, To और Journey Date भरें।");
       return;
     }
 
-    console.log({
-      from,
-      to,
-      journeyDate,
+    const params = new URLSearchParams({
+      from: from.trim(),
+      to: to.trim(),
+      date: journeyDate,
       passengers,
-      travelClass,
+      class: travelClass,
     });
 
-    alert("Train search शुरू हो गया है।");
+    router.push(`/service2/train/results?${params.toString()}`);
   }
 
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-8">
-
-      {/* HEADER */}
       <div className="mx-auto max-w-6xl">
 
+        {/* HEADER */}
         <div className="mb-8 text-center">
           <p className="text-sm font-medium text-blue-600">
             RY MULTI SERVICE
@@ -50,13 +52,11 @@ export default function TrainPage() {
 
         {/* SEARCH CARD */}
         <div className="mx-auto max-w-4xl rounded-2xl bg-white p-6 shadow-lg">
-
           <h2 className="mb-6 text-xl font-bold text-gray-900">
             Search Train
           </h2>
 
           <form onSubmit={handleSearch}>
-
             {/* FROM / TO */}
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
 
@@ -89,7 +89,6 @@ export default function TrainPage() {
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
-
             </div>
 
             {/* DATE / PASSENGERS / CLASS */}
@@ -140,46 +139,25 @@ export default function TrainPage() {
                   onChange={(e) => setTravelClass(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 >
-                  <option value="SL">
-                    Sleeper (SL)
-                  </option>
-
-                  <option value="3A">
-                    AC 3 Tier (3A)
-                  </option>
-
-                  <option value="2A">
-                    AC 2 Tier (2A)
-                  </option>
-
-                  <option value="1A">
-                    AC First Class (1A)
-                  </option>
-
-                  <option value="CC">
-                    Chair Car (CC)
-                  </option>
-
-                  <option value="2S">
-                    Second Sitting (2S)
-                  </option>
+                  <option value="SL">Sleeper (SL)</option>
+                  <option value="3A">AC 3 Tier (3A)</option>
+                  <option value="2A">AC 2 Tier (2A)</option>
+                  <option value="1A">AC First Class (1A)</option>
+                  <option value="CC">Chair Car (CC)</option>
+                  <option value="2S">Second Sitting (2S)</option>
                 </select>
               </div>
-
             </div>
 
             {/* SEARCH BUTTON */}
             <div className="mt-7">
-
               <button
                 type="submit"
                 className="w-full rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
               >
                 🔍 Search Trains
               </button>
-
             </div>
-
           </form>
         </div>
 
@@ -187,9 +165,7 @@ export default function TrainPage() {
         <div className="mx-auto mt-8 grid max-w-4xl grid-cols-1 gap-5 md:grid-cols-3">
 
           <div className="rounded-xl bg-white p-5 text-center shadow-sm">
-            <div className="text-3xl">
-              🚆
-            </div>
+            <div className="text-3xl">🚆</div>
 
             <h3 className="mt-3 font-bold text-gray-900">
               Train Search
@@ -201,9 +177,7 @@ export default function TrainPage() {
           </div>
 
           <div className="rounded-xl bg-white p-5 text-center shadow-sm">
-            <div className="text-3xl">
-              👤
-            </div>
+            <div className="text-3xl">👤</div>
 
             <h3 className="mt-3 font-bold text-gray-900">
               Passenger Details
@@ -215,9 +189,7 @@ export default function TrainPage() {
           </div>
 
           <div className="rounded-xl bg-white p-5 text-center shadow-sm">
-            <div className="text-3xl">
-              🎫
-            </div>
+            <div className="text-3xl">🎫</div>
 
             <h3 className="mt-3 font-bold text-gray-900">
               Easy Booking
@@ -229,9 +201,7 @@ export default function TrainPage() {
           </div>
 
         </div>
-
       </div>
-
     </main>
   );
 }

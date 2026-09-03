@@ -161,7 +161,6 @@ export default function BusConfirmationPage() {
         return {
           operator:
             data?.bus?.operator ||
-            provider ||
             "",
 
           busType:
@@ -592,7 +591,6 @@ export default function BusConfirmationPage() {
 
                 <p className="font-bold text-gray-900 mt-1">
                   {booking?.operator ||
-                    transaction.provider ||
                     "-"}
                 </p>
               </div>
@@ -887,7 +885,7 @@ export default function BusConfirmationPage() {
           </Link>
 
           <Link
-            href={`/service1/history/${encodeURIComponent(
+            href={`/history/bus/${encodeURIComponent(
               transaction.transactionId
             )}`}
             className="flex-1 bg-gray-800 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-900 text-center"

@@ -175,7 +175,7 @@ export default async function Service1Page() {
 
 
           {/* 5. PAYMENT HISTORY */}
-          <Link href="/service1/history">
+          <Link href="/history">
 
             <div className="bg-white rounded-xl shadow p-6 h-full
               hover:shadow-lg hover:-translate-y-1 transition cursor-pointer">
