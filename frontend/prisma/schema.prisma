@@ -30,7 +30,12 @@ model transaction {
   @@index([userId], map: "Transaction_userId_idx")
   @@map("Transaction")
 }
-
+enum UserRole {
+  RETAILER
+  DISTRIBUTOR
+  MASTER_DISTRIBUTOR
+  ADMIN
+} 
 model user {
   id        Int      @id @default(autoincrement())
   name      String
@@ -39,5 +44,6 @@ model user {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   mobile    String   @unique(map: "User_mobile_key")
+  role      UserRole @default(RETAILER)
   @@map("User")
 }

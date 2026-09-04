@@ -60,6 +60,7 @@ export async function getCurrentUser() {
       name: true,
       email: true,
       mobile: true,
+      role: true,
     },
   });
 
