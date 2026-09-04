@@ -30,11 +30,17 @@ type ParsedDescription = {
     operator?: string;
   };
 
+  electricity?: {
+    consumerNumber?: string;
+    operator?: string;
+  };
+
   mobile?: string;
   operator?: string;
   circle?: string;
 
   customerId?: string;
+  consumerNumber?: string;
 
   airline?: string;
   flightNo?: string;
@@ -120,15 +126,17 @@ function parseDescription(description: string | null): ParsedDescription {
     }
   }
 
-  const mobileMatch = value.match(/Mobile:\s*([^,]+)/i);
-  const operatorMatch = value.match(/Operator:\s*([^,]+)/i);
-  const circleMatch = value.match(/Circle:\s*([^,]+)/i);
+  const electricityConsumerMatch = value.match(
+    /Electricity Consumer Number:\s*([^,]+)/i
+  );
+  const electricityBoardMatch = value.match(
+    /Board:\s*([^,]+)/i
+  );
 
-  if (mobileMatch || operatorMatch || circleMatch) {
+  if (electricityConsumerMatch || electricityBoardMatch) {
     return {
-      mobile: mobileMatch?.[1]?.trim(),
-      operator: operatorMatch?.[1]?.trim(),
-      circle: circleMatch?.[1]?.trim(),
+      consumerNumber: electricityConsumerMatch?.[1]?.trim(),
+      operator: electricityBoardMatch?.[1]?.trim(),
     };
   }
 
@@ -143,6 +151,18 @@ function parseDescription(description: string | null): ParsedDescription {
     return {
       customerId: dthCustomerMatch?.[1]?.trim(),
       operator: dthOperatorMatch?.[1]?.trim(),
+    };
+  }
+
+  const mobileMatch = value.match(/Mobile:\s*([^,]+)/i);
+  const operatorMatch = value.match(/Operator:\s*([^,]+)/i);
+  const circleMatch = value.match(/Circle:\s*([^,]+)/i);
+
+  if (mobileMatch || operatorMatch || circleMatch) {
+    return {
+      mobile: mobileMatch?.[1]?.trim(),
+      operator: operatorMatch?.[1]?.trim(),
+      circle: circleMatch?.[1]?.trim(),
     };
   }
 
@@ -171,6 +191,14 @@ function isDthService(service: string, category?: string | null) {
     service === "DTH_RECHARGE" ||
     service === "DTH" ||
     category === "DTH"
+  );
+}
+
+function isElectricityService(service: string, category?: string | null) {
+  return (
+    service === "ELECTRICITY_BILL" ||
+    service === "ELECTRICITY" ||
+    category === "ELECTRICITY"
   );
 }
 
@@ -221,6 +249,10 @@ function getTitle(
     return "DTH Recharge";
   }
 
+  if (isElectricityService(service, category)) {
+    return "Electricity Bill Payment";
+  }
+
   return service.replaceAll("_", " ");
 }
 
@@ -241,6 +273,10 @@ function getIcon(service: string, category: string | null) {
     return "📺";
   }
 
+  if (isElectricityService(service, category)) {
+    return "⚡";
+  }
+
   return "💳";
 }
 
@@ -251,7 +287,8 @@ function getStatusClasses(status: string) {
     normalizedStatus === "SUCCESS" ||
     normalizedStatus === "RECHARGE_SUCCESS" ||
     normalizedStatus === "POSTPAID_SUCCESS" ||
-    normalizedStatus === "DTH_SUCCESS"
+    normalizedStatus === "DTH_SUCCESS" ||
+    normalizedStatus === "ELECTRICITY_SUCCESS"
   ) {
     return "bg-green-100 text-green-700";
   }
@@ -260,7 +297,8 @@ function getStatusClasses(status: string) {
     normalizedStatus === "FAILED" ||
     normalizedStatus === "RECHARGE_FAILED" ||
     normalizedStatus === "POSTPAID_FAILED" ||
-    normalizedStatus === "DTH_FAILED"
+    normalizedStatus === "DTH_FAILED" ||
+    normalizedStatus === "ELECTRICITY_FAILED"
   ) {
     return "bg-red-100 text-red-700";
   }
@@ -275,7 +313,8 @@ function isSuccessStatus(status: string) {
     normalizedStatus === "SUCCESS" ||
     normalizedStatus === "RECHARGE_SUCCESS" ||
     normalizedStatus === "POSTPAID_SUCCESS" ||
-    normalizedStatus === "DTH_SUCCESS"
+    normalizedStatus === "DTH_SUCCESS" ||
+    normalizedStatus === "ELECTRICITY_SUCCESS"
   );
 }
 
@@ -295,7 +334,8 @@ function isFailedStatus(status: string) {
     normalizedStatus === "FAILED" ||
     normalizedStatus === "RECHARGE_FAILED" ||
     normalizedStatus === "POSTPAID_FAILED" ||
-    normalizedStatus === "DTH_FAILED"
+    normalizedStatus === "DTH_FAILED" ||
+    normalizedStatus === "ELECTRICITY_FAILED"
   );
 }
 
@@ -369,6 +409,11 @@ export default async function HistoryPage() {
                 transaction.category
               );
 
+              const electricityBill = isElectricityService(
+                transaction.service,
+                transaction.category
+              );
+
               const title = getTitle(
                 transaction.service,
                 transaction.category,
@@ -430,6 +475,18 @@ export default async function HistoryPage() {
 
               const dthOperator =
                 details.dth?.operator ||
+                details.operator ||
+                providerFallback ||
+                "-";
+
+              const electricityConsumerNumber =
+                details.electricity?.consumerNumber ||
+                details.consumerNumber ||
+                transaction.referenceId ||
+                "-";
+
+              const electricityOperator =
+                details.electricity?.operator ||
                 details.operator ||
                 providerFallback ||
                 "-";
@@ -740,6 +797,79 @@ export default async function HistoryPage() {
                     </div>
                   )}
 
+                  {electricityBill && (
+                    <div className="mt-5 grid grid-cols-2 gap-4 rounded-xl bg-gray-50 p-4 md:grid-cols-4">
+                      <div>
+                        <p className="text-xs text-gray-500">
+                          Consumer Number
+                        </p>
+                        <p className="break-all font-semibold text-gray-900">
+                          {electricityConsumerNumber}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-500">
+                          Electricity Board
+                        </p>
+                        <p className="font-semibold text-gray-900">
+                          {formatValue(electricityOperator)}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-500">
+                          Bill Status
+                        </p>
+                        <p className="font-semibold text-gray-900">
+                          {status}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-500">Currency</p>
+                        <p className="font-semibold text-gray-900">
+                          {details.payment?.currency || "INR"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-500">
+                          Payment Provider
+                        </p>
+                        <p className="font-semibold text-gray-900">
+                          {paymentProvider}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-500">Payment ID</p>
+                        <p className="break-all text-sm font-medium text-gray-900">
+                          {transaction.razorpayPaymentId || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-500">Order ID</p>
+                        <p className="break-all text-sm font-medium text-gray-900">
+                          {transaction.razorpayOrderId || "-"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-500">
+                          Bill Amount
+                        </p>
+                        <p className="font-semibold text-gray-900">
+                          ₹
+                          {Number.isFinite(amount)
+                            ? amount.toFixed(2)
+                            : "0.00"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {transaction.service === "TRAIN_BOOKING" && (
                     <div className="mt-5 grid grid-cols-2 gap-4 rounded-xl bg-gray-50 p-4 md:grid-cols-4">
                       <div>
@@ -973,6 +1103,37 @@ export default async function HistoryPage() {
                         className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
                       >
                         ↻ Recharge Again
+                      </Link>
+                    )}
+
+                    {electricityBill && status === "ELECTRICITY_SUCCESS" && (
+                      <Link
+                        href={`/history/electricity/${transaction.transactionId}`}
+                        className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                      >
+                        ⚡ View Electricity Receipt
+                      </Link>
+                    )}
+
+                    {electricityBill && isPending && (
+                      <Link
+                        href={`/service1/electricity/payment?transactionId=${encodeURIComponent(
+                          transaction.transactionId
+                        )}&amount=${encodeURIComponent(
+                          Number.isFinite(amount) ? String(amount) : "0"
+                        )}`}
+                        className="rounded-lg bg-yellow-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-yellow-600"
+                      >
+                        💳 Complete Payment
+                      </Link>
+                    )}
+
+                    {electricityBill && isFailed && (
+                      <Link
+                        href="/service1/electricity"
+                        className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+                      >
+                        ↻ Pay Bill Again
                       </Link>
                     )}
 
