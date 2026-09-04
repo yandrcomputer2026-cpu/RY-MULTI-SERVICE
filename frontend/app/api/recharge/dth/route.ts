@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
 
 export const runtime = "nodejs";
 
@@ -46,8 +47,6 @@ export async function POST(request: Request) {
         }
       );
     }
-
-    console.log("USER:", user.id, user.email);
 
     // ==================================================
     // REQUEST BODY
@@ -140,10 +139,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // ==================================================
-    // CUSTOMER ID CHARACTER VALIDATION
-    // ==================================================
-
     if (!/^[A-Z0-9]+$/.test(customerId)) {
       return NextResponse.json(
         {
@@ -208,10 +203,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // ==================================================
-    // MAXIMUM 2 DECIMAL PLACES
-    // ==================================================
-
     const decimalPlaces =
       (String(amount).split(".")[1] || "").length;
 
@@ -243,6 +234,27 @@ export async function POST(request: Request) {
     );
 
     // ==================================================
+    // STRUCTURED DTH DATA
+    // ==================================================
+
+    const dthData = {
+      bookingType: "DTH_RECHARGE",
+
+      dth: {
+        customerId,
+        operator,
+      },
+
+      payment: {
+        amount,
+        currency: "INR",
+      },
+    };
+
+    const description =
+      JSON.stringify(dthData);
+
+    // ==================================================
     // CREATE DATABASE TRANSACTION
     // ==================================================
 
@@ -257,8 +269,7 @@ export async function POST(request: Request) {
 
           category: "DTH",
 
-          description:
-            `DTH Customer ID: ${customerId}, Operator: ${operator}`,
+          description,
 
           referenceId: customerId,
 
@@ -303,6 +314,8 @@ export async function POST(request: Request) {
           status:
             transaction.status,
         },
+
+        recharge: dthData,
       },
       {
         status: 200,

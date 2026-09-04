@@ -4,6 +4,34 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
+type DthDescription = {
+  bookingType?: string;
+
+  dth?: {
+    customerId?: string;
+    operator?: string;
+  };
+
+  payment?: {
+    amount?: number;
+    currency?: string;
+  };
+};
+
+function parseDthDescription(
+  description: string | null
+): DthDescription {
+  if (!description) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(description) as DthDescription;
+  } catch {
+    return {};
+  }
+}
+
 // ======================================================
 // DTH PROCESS
 // ======================================================
@@ -21,10 +49,6 @@ export async function POST(request: Request) {
     const user = await getCurrentUser();
 
     if (!user) {
-      console.log(
-        "DTH PROCESS: USER NOT LOGGED IN"
-      );
-
       return NextResponse.json(
         {
           success: false,
@@ -35,12 +59,6 @@ export async function POST(request: Request) {
         }
       );
     }
-
-    console.log(
-      "DTH PROCESS USER:",
-      user.id,
-      user.email
-    );
 
     // ==================================================
     // REQUEST BODY
@@ -68,17 +86,11 @@ export async function POST(request: Request) {
       body.transactionId ?? ""
     ).trim();
 
-    console.log(
-      "DTH PROCESS TRANSACTION:",
-      transactionId
-    );
-
     if (!transactionId) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Transaction ID is required.",
+          message: "Transaction ID is required.",
         },
         {
           status: 400,
@@ -87,7 +99,7 @@ export async function POST(request: Request) {
     }
 
     // ==================================================
-    // FIND TRANSACTION
+    // FIND DTH TRANSACTION
     // ==================================================
 
     const transaction =
@@ -95,19 +107,15 @@ export async function POST(request: Request) {
         where: {
           transactionId,
           userId: user.id,
+          service: "DTH_RECHARGE",
         },
       });
 
     if (!transaction) {
-      console.log(
-        "DTH PROCESS: TRANSACTION NOT FOUND"
-      );
-
       return NextResponse.json(
         {
           success: false,
-          message:
-            "DTH transaction not found.",
+          message: "DTH transaction not found.",
         },
         {
           status: 404,
@@ -115,46 +123,46 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(
-      "DTH TRANSACTION FOUND:",
-      transaction.transactionId
-    );
+    const status = String(
+      transaction.status || ""
+    ).toUpperCase();
 
-    // ==================================================
-    // SERVICE VALIDATION
-    // ==================================================
-
-    if (
-      transaction.service !==
-      "DTH_RECHARGE"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Invalid transaction service.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    // ==================================================
-    // ALREADY SUCCESS
-    // ==================================================
-
-    if (
-      transaction.status ===
-      "SUCCESS"
-    ) {
-      console.log(
-        "DTH PROCESS: TRANSACTION ALREADY SUCCESS"
+    const details =
+      parseDthDescription(
+        transaction.description
       );
 
+    const customerId =
+      details.dth?.customerId ||
+      transaction.referenceId ||
+      "";
+
+    const providerFallback =
+      transaction.provider &&
+      transaction.provider.toUpperCase() !== "RAZORPAY"
+        ? transaction.provider
+        : "";
+
+    const operator =
+      details.dth?.operator ||
+      providerFallback;
+
+    const currency =
+      details.payment?.currency ||
+      "INR";
+
+    const amount =
+      Number(transaction.amount);
+
+    // ==================================================
+    // ALREADY PROCESSED
+    // ==================================================
+
+    if (status === "DTH_SUCCESS") {
       return NextResponse.json(
         {
           success: true,
+
           message:
             "DTH recharge already processed successfully.",
 
@@ -167,11 +175,28 @@ export async function POST(request: Request) {
           status:
             transaction.status,
 
-          customerId:
-            transaction.referenceId,
+          processed: true,
+          alreadyProcessed: true,
 
-          operator:
-            transaction.provider,
+          dth: {
+            customerId,
+            operator,
+          },
+
+          payment: {
+            currency,
+
+            provider:
+              transaction.razorpayPaymentId
+                ? "RAZORPAY"
+                : transaction.provider,
+
+            razorpayOrderId:
+              transaction.razorpayOrderId,
+
+            razorpayPaymentId:
+              transaction.razorpayPaymentId,
+          },
         },
         {
           status: 200,
@@ -180,23 +205,21 @@ export async function POST(request: Request) {
     }
 
     // ==================================================
-    // ONLY PENDING TRANSACTION CAN PROCESS
+    // PAYMENT VERIFICATION CHECK
+    //
+    // Generic Razorpay verify route changes:
+    // PENDING -> SUCCESS
+    //
+    // Therefore SUCCESS means payment is verified and
+    // the DTH recharge can now be processed.
     // ==================================================
 
-    if (
-      transaction.status !==
-      "PENDING"
-    ) {
-      console.log(
-        "DTH PROCESS: INVALID STATUS:",
-        transaction.status
-      );
-
+    if (status !== "SUCCESS") {
       return NextResponse.json(
         {
           success: false,
           message:
-            `Transaction cannot be processed because current status is ${transaction.status}.`,
+            `Payment is not successful yet. Current status: ${transaction.status}`,
         },
         {
           status: 400,
@@ -205,26 +228,8 @@ export async function POST(request: Request) {
     }
 
     // ==================================================
-    // DTH DATA
+    // DTH DATA CHECK
     // ==================================================
-
-    const customerId =
-      transaction.referenceId;
-
-    const operator =
-      transaction.provider;
-
-    const amount =
-      Number(transaction.amount);
-
-    console.log(
-      "DTH RECHARGE DATA:",
-      {
-        customerId,
-        operator,
-        amount,
-      }
-    );
 
     if (
       !customerId ||
@@ -245,56 +250,16 @@ export async function POST(request: Request) {
 
     // ==================================================
     // DTH PROVIDER
-    // ==================================================
-
-    console.log(
-      "DTH PROVIDER PROCESS STARTED"
-    );
-
-    /*
-      =====================================================
-      IMPORTANT
-
-      यहाँ बाद में actual DTH API लगानी है।
-
-      Example:
-
-      const providerResponse =
-        await fetch("DTH_PROVIDER_API_URL", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization:
-              `Bearer ${process.env.DTH_API_KEY}`,
-          },
-          body: JSON.stringify({
-            customerId,
-            operator,
-            amount,
-            transactionId,
-          }),
-        });
-
-      const providerData =
-        await providerResponse.json();
-
-      अगर provider success देता है तभी
-      transaction SUCCESS करें।
-    */
-
-    // ==================================================
-    // TEST MODE
+    //
+    // Current project flow uses DTH_TEST_MODE for demo
+    // processing. A real DTH provider API should replace
+    // this block later.
     // ==================================================
 
     const testMode =
-      process.env.DTH_TEST_MODE ===
-      "true";
+      process.env.DTH_TEST_MODE === "true";
 
     if (!testMode) {
-      console.log(
-        "DTH TEST MODE DISABLED"
-      );
-
       return NextResponse.json(
         {
           success: false,
@@ -308,11 +273,18 @@ export async function POST(request: Request) {
     }
 
     console.log(
-      "DTH TEST MODE: SUCCESS"
+      "DTH TEST MODE PROCESSING:",
+      {
+        transactionId:
+          transaction.transactionId,
+        customerId,
+        operator,
+        amount,
+      }
     );
 
     // ==================================================
-    // UPDATE TRANSACTION
+    // FINAL DTH STATUS
     // ==================================================
 
     const updatedTransaction =
@@ -322,18 +294,13 @@ export async function POST(request: Request) {
         },
 
         data: {
-          status: "SUCCESS",
+          status: "DTH_SUCCESS",
           updatedAt: new Date(),
         },
       });
 
-    console.log(
-      "DTH TRANSACTION SUCCESS:",
-      updatedTransaction.transactionId
-    );
-
     // ==================================================
-    // RESPONSE
+    // SUCCESS RESPONSE
     // ==================================================
 
     return NextResponse.json(
@@ -352,23 +319,38 @@ export async function POST(request: Request) {
         status:
           updatedTransaction.status,
 
-        customerId:
-          updatedTransaction.referenceId,
+        processed: true,
+        alreadyProcessed: false,
 
-        operator:
-          updatedTransaction.provider,
+        dth: {
+          customerId,
+          operator,
+        },
+
+        payment: {
+          currency,
+
+          provider:
+            updatedTransaction.razorpayPaymentId
+              ? "RAZORPAY"
+              : updatedTransaction.provider,
+
+          razorpayOrderId:
+            updatedTransaction.razorpayOrderId,
+
+          razorpayPaymentId:
+            updatedTransaction.razorpayPaymentId,
+        },
       },
       {
         status: 200,
       }
     );
   } catch (error) {
-    console.error("================================");
     console.error(
       "DTH PROCESS ERROR:",
       error
     );
-    console.error("================================");
 
     return NextResponse.json(
       {
