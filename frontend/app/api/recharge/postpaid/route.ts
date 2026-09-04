@@ -76,6 +76,7 @@ export async function POST(request: Request) {
     // ==================================================
 
     const mobile = String(body.mobile ?? "").trim();
+
     const operator = String(body.operator ?? "")
       .trim()
       .toLowerCase();
@@ -152,7 +153,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Maximum 2 decimal places
     const decimalPlaces =
       (String(amount).split(".")[1] || "").length;
 
@@ -178,6 +178,27 @@ export async function POST(request: Request) {
     console.log("TRANSACTION ID:", transactionId);
 
     // ==================================================
+    // STRUCTURED POSTPAID DATA
+    // ==================================================
+
+    const postpaidData = {
+      bookingType: "MOBILE_POSTPAID_BILL",
+
+      bill: {
+        mobile,
+        operator,
+      },
+
+      payment: {
+        amount,
+        currency: "INR",
+      },
+    };
+
+    const description =
+      JSON.stringify(postpaidData);
+
+    // ==================================================
     // CREATE DATABASE TRANSACTION
     // ==================================================
 
@@ -191,8 +212,7 @@ export async function POST(request: Request) {
 
         category: "POSTPAID_BILL",
 
-        description:
-          `Mobile: ${mobile}, Operator: ${operator}`,
+        description,
 
         referenceId: mobile,
 
@@ -219,21 +239,26 @@ export async function POST(request: Request) {
       {
         success: true,
 
-        message: "Postpaid bill transaction created successfully.",
+        message:
+          "Postpaid bill transaction created successfully.",
 
-        // IMPORTANT:
-        // Frontend में data.transactionId पढ़ा जा रहा है
-        transactionId: transaction.transactionId,
+        transactionId:
+          transaction.transactionId,
 
         transaction: {
           id: transaction.id,
 
-          transactionId: transaction.transactionId,
+          transactionId:
+            transaction.transactionId,
 
-          amount: transaction.amount.toString(),
+          amount:
+            transaction.amount.toString(),
 
-          status: transaction.status,
+          status:
+            transaction.status,
         },
+
+        bill: postpaidData,
       },
       {
         status: 200,
@@ -241,13 +266,17 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error("================================");
-    console.error("POSTPAID BILL ERROR:", error);
+    console.error(
+      "POSTPAID BILL ERROR:",
+      error
+    );
     console.error("================================");
 
     return NextResponse.json(
       {
         success: false,
-        message: "Server error. Please try again.",
+        message:
+          "Server error. Please try again.",
       },
       {
         status: 500,

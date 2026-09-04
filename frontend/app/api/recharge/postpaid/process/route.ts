@@ -4,6 +4,34 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
+type PostpaidDescription = {
+  bookingType?: string;
+
+  bill?: {
+    mobile?: string;
+    operator?: string;
+  };
+
+  payment?: {
+    amount?: number;
+    currency?: string;
+  };
+};
+
+function parsePostpaidDescription(
+  description: string | null
+): PostpaidDescription {
+  if (!description) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(description) as PostpaidDescription;
+  } catch {
+    return {};
+  }
+}
+
 export async function POST(request: Request) {
   try {
     console.log("================================");
@@ -29,12 +57,6 @@ export async function POST(request: Request) {
         }
       );
     }
-
-    console.log(
-      "POSTPAID PROCESS USER:",
-      user.id,
-      user.email
-    );
 
     // ======================================================
     // REQUEST BODY
@@ -62,15 +84,6 @@ export async function POST(request: Request) {
       body.transactionId ?? ""
     ).trim();
 
-    console.log(
-      "POSTPAID PROCESS TRANSACTION:",
-      transactionId
-    );
-
-    // ======================================================
-    // TRANSACTION ID VALIDATION
-    // ======================================================
-
     if (!transactionId) {
       return NextResponse.json(
         {
@@ -84,7 +97,7 @@ export async function POST(request: Request) {
     }
 
     // ======================================================
-    // FIND TRANSACTION
+    // FIND POSTPAID TRANSACTION
     // ======================================================
 
     const transaction =
@@ -92,18 +105,15 @@ export async function POST(request: Request) {
         where: {
           transactionId,
           userId: user.id,
+          service: "MOBILE_POSTPAID",
         },
       });
 
     if (!transaction) {
-      console.log(
-        "POSTPAID PROCESS: TRANSACTION NOT FOUND"
-      );
-
       return NextResponse.json(
         {
           success: false,
-          message: "Transaction not found.",
+          message: "Postpaid transaction not found.",
         },
         {
           status: 404,
@@ -111,66 +121,61 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(
-      "POSTPAID TRANSACTION FOUND:",
-      transaction.transactionId
-    );
+    const status = String(
+      transaction.status || ""
+    ).toUpperCase();
 
-    console.log(
-      "TRANSACTION STATUS:",
-      transaction.status
-    );
-
-    // ======================================================
-    // PAYMENT VERIFICATION CHECK
-    // ======================================================
-
-    if (
-      String(transaction.status).toUpperCase() ===
-      "PENDING"
-    ) {
-      console.log(
-        "POSTPAID PROCESS: PAYMENT NOT VERIFIED"
+    const details =
+      parsePostpaidDescription(
+        transaction.description
       );
 
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Payment is not verified yet.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
+    const mobile =
+      details.bill?.mobile ||
+      transaction.referenceId ||
+      "";
+
+    const providerFallback =
+      transaction.provider &&
+      transaction.provider.toUpperCase() !== "RAZORPAY"
+        ? transaction.provider
+        : "";
+
+    const operator =
+      details.bill?.operator ||
+      providerFallback;
+
+    const currency =
+      details.payment?.currency ||
+      "INR";
 
     // ======================================================
-    // ALREADY SUCCESS
-    //
-    // IMPORTANT:
-    // अगर transaction पहले से SUCCESS है,
-    // तो दोबारा process करने की जरूरत नहीं।
+    // ALREADY PROCESSED
     // ======================================================
 
-    if (
-      String(transaction.status).toUpperCase() ===
-      "SUCCESS"
-    ) {
-      console.log(
-        "POSTPAID PROCESS: TRANSACTION ALREADY SUCCESS"
-      );
-
+    if (status === "POSTPAID_SUCCESS") {
       return NextResponse.json(
         {
           success: true,
           message:
             "Postpaid bill has already been processed successfully.",
+
           transactionId:
             transaction.transactionId,
-          status: transaction.status,
+
+          status:
+            transaction.status,
+
           processed: true,
           alreadyProcessed: true,
+
+          bill: {
+            mobile,
+            operator,
+            amount:
+              transaction.amount.toString(),
+            currency,
+          },
         },
         {
           status: 200,
@@ -179,43 +184,43 @@ export async function POST(request: Request) {
     }
 
     // ======================================================
-    // POSTPAID BILL PROCESSING
+    // PAYMENT VERIFICATION CHECK
     //
-    // CURRENTLY TEST MODE
-    //
-    // यहाँ future में Airtel/Jio/Vi/BSNL का actual
-    // bill payment API लगाया जा सकता है।
+    // Generic Razorpay verify route changes PENDING -> SUCCESS.
+    // Therefore SUCCESS means payment verified and ready for
+    // postpaid bill processing.
     // ======================================================
 
-    console.log(
-      "================================"
-    );
+    if (status !== "SUCCESS") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            `Payment is not successful yet. Current status: ${transaction.status}`,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
-    console.log(
-      "POSTPAID BILL PROCESSING STARTED"
-    );
+    // ======================================================
+    // POSTPAID BILL PROCESSING - TEST MODE
+    //
+    // Future real operator API integration goes here.
+    // ======================================================
 
-    console.log({
+    console.log("POSTPAID BILL PROCESSING STARTED", {
       transactionId:
         transaction.transactionId,
-
+      mobile,
+      operator,
       amount:
         transaction.amount.toString(),
-
-      provider:
-        transaction.provider,
-
-      referenceId:
-        transaction.referenceId,
     });
 
     // ======================================================
-    // MARK TRANSACTION SUCCESS
-    //
-    // NOTE:
-    // Razorpay verification पहले हो चुकी है।
-    // इसलिए यहाँ postpaid processing successful
-    // होने पर transaction को SUCCESS किया जा रहा है।
+    // FINAL POSTPAID STATUS
     // ======================================================
 
     const updatedTransaction =
@@ -225,24 +230,10 @@ export async function POST(request: Request) {
         },
 
         data: {
-          status: "SUCCESS",
+          status: "POSTPAID_SUCCESS",
           updatedAt: new Date(),
         },
       });
-
-    console.log(
-      "POSTPAID TRANSACTION UPDATED:",
-      updatedTransaction.transactionId
-    );
-
-    console.log(
-      "POSTPAID FINAL STATUS:",
-      updatedTransaction.status
-    );
-
-    console.log(
-      "================================"
-    );
 
     // ======================================================
     // SUCCESS RESPONSE
@@ -262,8 +253,28 @@ export async function POST(request: Request) {
           updatedTransaction.status,
 
         processed: true,
-
         alreadyProcessed: false,
+
+        bill: {
+          mobile,
+          operator,
+          amount:
+            updatedTransaction.amount.toString(),
+          currency,
+        },
+
+        payment: {
+          provider:
+            updatedTransaction.razorpayPaymentId
+              ? "RAZORPAY"
+              : updatedTransaction.provider,
+
+          razorpayOrderId:
+            updatedTransaction.razorpayOrderId,
+
+          razorpayPaymentId:
+            updatedTransaction.razorpayPaymentId,
+        },
       },
       {
         status: 200,
@@ -271,16 +282,8 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error(
-      "================================"
-    );
-
-    console.error(
       "POSTPAID PROCESS ERROR:",
       error
-    );
-
-    console.error(
-      "================================"
     );
 
     return NextResponse.json(
