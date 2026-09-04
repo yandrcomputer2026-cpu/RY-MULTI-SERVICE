@@ -1,8 +1,23 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
 
 export const runtime = "nodejs";
+
+// ======================================================
+// ALLOWED ELECTRICITY BOARDS
+// ======================================================
+
+const ALLOWED_OPERATORS = [
+  "bses-rajdhani",
+  "bses-yamuna",
+  "tata-power-delhi",
+  "uppcl",
+  "msedcl",
+  "mpwz",
+  "jvvnl",
+] as const;
 
 // ======================================================
 // POST
@@ -21,8 +36,6 @@ export async function POST(request: Request) {
     const user = await getCurrentUser();
 
     if (!user) {
-      console.log("ELECTRICITY: USER NOT LOGGED IN");
-
       return NextResponse.json(
         {
           success: false,
@@ -33,12 +46,6 @@ export async function POST(request: Request) {
         }
       );
     }
-
-    console.log(
-      "ELECTRICITY USER:",
-      user.id,
-      user.email
-    );
 
     // ==================================================
     // REQUEST BODY
@@ -131,10 +138,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // ==================================================
-    // CONSUMER NUMBER CHARACTER VALIDATION
-    // ==================================================
-
     if (!/^[A-Z0-9/_-]+$/.test(consumerNumber)) {
       return NextResponse.json(
         {
@@ -152,25 +155,16 @@ export async function POST(request: Request) {
     // ELECTRICITY BOARD VALIDATION
     // ==================================================
 
-    if (!operator) {
+    if (
+      !ALLOWED_OPERATORS.includes(
+        operator as (typeof ALLOWED_OPERATORS)[number]
+      )
+    ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Please select Electricity Board.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    if (operator.length > 100) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Invalid Electricity Board.",
+            "Invalid Electricity Board selected.",
         },
         {
           status: 400,
@@ -208,10 +202,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // ==================================================
-    // MAXIMUM 2 DECIMAL PLACES
-    // ==================================================
-
     const decimalPlaces =
       (String(amount).split(".")[1] || "").length;
 
@@ -237,10 +227,26 @@ export async function POST(request: Request) {
         .randomUUID()
         .slice(0, 8)}`;
 
-    console.log(
-      "ELECTRICITY TRANSACTION ID:",
-      transactionId
-    );
+    // ==================================================
+    // STRUCTURED ELECTRICITY DATA
+    // ==================================================
+
+    const electricityData = {
+      bookingType: "ELECTRICITY_BILL_PAYMENT",
+
+      electricity: {
+        consumerNumber,
+        operator,
+      },
+
+      payment: {
+        amount,
+        currency: "INR",
+      },
+    };
+
+    const description =
+      JSON.stringify(electricityData);
 
     // ==================================================
     // CREATE DATABASE TRANSACTION
@@ -257,8 +263,7 @@ export async function POST(request: Request) {
 
           category: "ELECTRICITY",
 
-          description:
-            `Electricity Consumer Number: ${consumerNumber}, Board: ${operator}`,
+          description,
 
           referenceId: consumerNumber,
 
@@ -271,11 +276,6 @@ export async function POST(request: Request) {
           updatedAt: new Date(),
         },
       });
-
-    console.log(
-      "ELECTRICITY TRANSACTION CREATED:",
-      transaction.transactionId
-    );
 
     // ==================================================
     // RESPONSE
@@ -303,18 +303,18 @@ export async function POST(request: Request) {
           status:
             transaction.status,
         },
+
+        bill: electricityData,
       },
       {
         status: 200,
       }
     );
   } catch (error) {
-    console.error("================================");
     console.error(
       "ELECTRICITY BILL ERROR:",
       error
     );
-    console.error("================================");
 
     return NextResponse.json(
       {

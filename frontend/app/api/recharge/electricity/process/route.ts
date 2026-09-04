@@ -4,6 +4,34 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
+type ElectricityDescription = {
+  bookingType?: string;
+
+  electricity?: {
+    consumerNumber?: string;
+    operator?: string;
+  };
+
+  payment?: {
+    amount?: number;
+    currency?: string;
+  };
+};
+
+function parseElectricityDescription(
+  description: string | null
+): ElectricityDescription {
+  if (!description) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(description) as ElectricityDescription;
+  } catch {
+    return {};
+  }
+}
+
 // ======================================================
 // ELECTRICITY PROCESS
 // ======================================================
@@ -21,10 +49,6 @@ export async function POST(request: Request) {
     const user = await getCurrentUser();
 
     if (!user) {
-      console.log(
-        "ELECTRICITY PROCESS: USER NOT LOGGED IN"
-      );
-
       return NextResponse.json(
         {
           success: false,
@@ -35,12 +59,6 @@ export async function POST(request: Request) {
         }
       );
     }
-
-    console.log(
-      "ELECTRICITY PROCESS USER:",
-      user.id,
-      user.email
-    );
 
     // ==================================================
     // REQUEST BODY
@@ -68,15 +86,6 @@ export async function POST(request: Request) {
       body.transactionId ?? ""
     ).trim();
 
-    console.log(
-      "ELECTRICITY PROCESS TRANSACTION:",
-      transactionId
-    );
-
-    // ==================================================
-    // TRANSACTION ID VALIDATION
-    // ==================================================
-
     if (!transactionId) {
       return NextResponse.json(
         {
@@ -90,7 +99,7 @@ export async function POST(request: Request) {
     }
 
     // ==================================================
-    // FIND TRANSACTION
+    // FIND ELECTRICITY TRANSACTION
     // ==================================================
 
     const transaction =
@@ -98,14 +107,11 @@ export async function POST(request: Request) {
         where: {
           transactionId,
           userId: user.id,
+          service: "ELECTRICITY_BILL",
         },
       });
 
     if (!transaction) {
-      console.log(
-        "ELECTRICITY PROCESS: TRANSACTION NOT FOUND"
-      );
-
       return NextResponse.json(
         {
           success: false,
@@ -118,43 +124,42 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(
-      "ELECTRICITY TRANSACTION FOUND:",
-      transaction.transactionId
-    );
+    const status = String(
+      transaction.status || ""
+    ).toUpperCase();
 
-    // ==================================================
-    // SERVICE VALIDATION
-    // ==================================================
-
-    if (
-      transaction.service !==
-      "ELECTRICITY_BILL"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Invalid transaction service.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    // ==================================================
-    // ALREADY SUCCESS
-    // ==================================================
-
-    if (
-      transaction.status ===
-      "SUCCESS"
-    ) {
-      console.log(
-        "ELECTRICITY PROCESS: TRANSACTION ALREADY SUCCESS"
+    const details =
+      parseElectricityDescription(
+        transaction.description
       );
 
+    const consumerNumber =
+      details.electricity?.consumerNumber ||
+      transaction.referenceId ||
+      "";
+
+    const providerFallback =
+      transaction.provider &&
+      transaction.provider.toUpperCase() !== "RAZORPAY"
+        ? transaction.provider
+        : "";
+
+    const operator =
+      details.electricity?.operator ||
+      providerFallback;
+
+    const currency =
+      details.payment?.currency ||
+      "INR";
+
+    const amount =
+      Number(transaction.amount);
+
+    // ==================================================
+    // ALREADY PROCESSED
+    // ==================================================
+
+    if (status === "ELECTRICITY_SUCCESS") {
       return NextResponse.json(
         {
           success: true,
@@ -171,11 +176,28 @@ export async function POST(request: Request) {
           status:
             transaction.status,
 
-          consumerNumber:
-            transaction.referenceId,
+          processed: true,
+          alreadyProcessed: true,
 
-          operator:
-            transaction.provider,
+          electricity: {
+            consumerNumber,
+            operator,
+          },
+
+          payment: {
+            currency,
+
+            provider:
+              transaction.razorpayPaymentId
+                ? "RAZORPAY"
+                : transaction.provider,
+
+            razorpayOrderId:
+              transaction.razorpayOrderId,
+
+            razorpayPaymentId:
+              transaction.razorpayPaymentId,
+          },
         },
         {
           status: 200,
@@ -184,52 +206,27 @@ export async function POST(request: Request) {
     }
 
     // ==================================================
-    // ONLY PENDING TRANSACTION CAN PROCESS
+    // PAYMENT VERIFICATION CHECK
+    //
+    // Generic Razorpay verify route changes:
+    // PENDING -> SUCCESS
+    //
+    // Therefore SUCCESS means payment is verified and
+    // Electricity bill processing can now run.
     // ==================================================
 
-    if (
-      transaction.status !==
-      "PENDING"
-    ) {
-      console.log(
-        "ELECTRICITY PROCESS: INVALID STATUS:",
-        transaction.status
-      );
-
+    if (status !== "SUCCESS") {
       return NextResponse.json(
         {
           success: false,
-
           message:
-            `Transaction cannot be processed because current status is ${transaction.status}.`,
+            `Payment is not successful yet. Current status: ${transaction.status}`,
         },
         {
           status: 400,
         }
       );
     }
-
-    // ==================================================
-    // ELECTRICITY DATA
-    // ==================================================
-
-    const consumerNumber =
-      transaction.referenceId;
-
-    const operator =
-      transaction.provider;
-
-    const amount =
-      Number(transaction.amount);
-
-    console.log(
-      "ELECTRICITY BILL DATA:",
-      {
-        consumerNumber,
-        operator,
-        amount,
-      }
-    );
 
     // ==================================================
     // DATA VALIDATION
@@ -254,67 +251,21 @@ export async function POST(request: Request) {
 
     // ==================================================
     // ELECTRICITY PROVIDER
-    // ==================================================
-
-    console.log(
-      "ELECTRICITY PROVIDER PROCESS STARTED"
-    );
-
-    /*
-      =====================================================
-      IMPORTANT
-
-      यहाँ बाद में actual Electricity Bill API लगानी है।
-
-      Example:
-
-      const providerResponse =
-        await fetch(
-          "ELECTRICITY_PROVIDER_API_URL",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-
-              Authorization:
-                `Bearer ${process.env.ELECTRICITY_API_KEY}`,
-            },
-
-            body: JSON.stringify({
-              consumerNumber,
-              operator,
-              amount,
-              transactionId,
-            }),
-          }
-        );
-
-      const providerData =
-        await providerResponse.json();
-
-      अगर provider success देता है तभी
-      transaction को SUCCESS करें।
-    */
-
-    // ==================================================
-    // TEST MODE
+    //
+    // Current project flow uses ELECTRICITY_TEST_MODE
+    // for demo/test processing.
+    //
+    // Replace this block later with the real Electricity
+    // / BBPS provider API.
     // ==================================================
 
     const testMode =
-      process.env.ELECTRICITY_TEST_MODE ===
-      "true";
+      process.env.ELECTRICITY_TEST_MODE === "true";
 
     if (!testMode) {
-      console.log(
-        "ELECTRICITY TEST MODE DISABLED"
-      );
-
       return NextResponse.json(
         {
           success: false,
-
           message:
             "Electricity provider API अभी configure नहीं है.",
         },
@@ -325,11 +276,18 @@ export async function POST(request: Request) {
     }
 
     console.log(
-      "ELECTRICITY TEST MODE: SUCCESS"
+      "ELECTRICITY TEST MODE PROCESSING:",
+      {
+        transactionId:
+          transaction.transactionId,
+        consumerNumber,
+        operator,
+        amount,
+      }
     );
 
     // ==================================================
-    // UPDATE TRANSACTION
+    // FINAL ELECTRICITY STATUS
     // ==================================================
 
     const updatedTransaction =
@@ -339,19 +297,13 @@ export async function POST(request: Request) {
         },
 
         data: {
-          status: "SUCCESS",
-
+          status: "ELECTRICITY_SUCCESS",
           updatedAt: new Date(),
         },
       });
 
-    console.log(
-      "ELECTRICITY TRANSACTION SUCCESS:",
-      updatedTransaction.transactionId
-    );
-
     // ==================================================
-    // RESPONSE
+    // SUCCESS RESPONSE
     // ==================================================
 
     return NextResponse.json(
@@ -370,11 +322,28 @@ export async function POST(request: Request) {
         status:
           updatedTransaction.status,
 
-        consumerNumber:
-          updatedTransaction.referenceId,
+        processed: true,
+        alreadyProcessed: false,
 
-        operator:
-          updatedTransaction.provider,
+        electricity: {
+          consumerNumber,
+          operator,
+        },
+
+        payment: {
+          currency,
+
+          provider:
+            updatedTransaction.razorpayPaymentId
+              ? "RAZORPAY"
+              : updatedTransaction.provider,
+
+          razorpayOrderId:
+            updatedTransaction.razorpayOrderId,
+
+          razorpayPaymentId:
+            updatedTransaction.razorpayPaymentId,
+        },
       },
       {
         status: 200,
@@ -382,22 +351,13 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error(
-      "================================"
-    );
-
-    console.error(
       "ELECTRICITY PROCESS ERROR:",
       error
-    );
-
-    console.error(
-      "================================"
     );
 
     return NextResponse.json(
       {
         success: false,
-
         message:
           "Electricity bill processing failed. Please try again.",
       },
