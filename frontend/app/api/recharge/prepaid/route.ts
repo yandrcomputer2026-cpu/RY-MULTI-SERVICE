@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-
 // ======================================================
 // ALLOWED OPERATORS
 // ======================================================
@@ -15,7 +14,6 @@ const ALLOWED_OPERATORS = [
   "vi",
   "bsnl",
 ] as const;
-
 
 // ======================================================
 // ALLOWED CIRCLES
@@ -42,7 +40,6 @@ const ALLOWED_CIRCLES = [
   "west-bengal",
 ] as const;
 
-
 // ======================================================
 // POST
 // ======================================================
@@ -52,7 +49,6 @@ export async function POST(request: Request) {
     console.log("================================");
     console.log("PREPAID RECHARGE API CALLED");
     console.log("================================");
-
 
     // ==================================================
     // USER CHECK
@@ -75,7 +71,6 @@ export async function POST(request: Request) {
     }
 
     console.log("USER:", user.id, user.email);
-
 
     // ==================================================
     // REQUEST BODY
@@ -102,16 +97,18 @@ export async function POST(request: Request) {
       );
     }
 
-
     // ==================================================
     // CLEAN DATA
     // ==================================================
 
     const mobile = String(body.mobile ?? "").trim();
-    const operator = String(body.operator ?? "").trim().toLowerCase();
-    const circle = String(body.circle ?? "").trim().toLowerCase();
+    const operator = String(body.operator ?? "")
+      .trim()
+      .toLowerCase();
+    const circle = String(body.circle ?? "")
+      .trim()
+      .toLowerCase();
     const amount = Number(body.amount);
-
 
     console.log("RECHARGE DATA:", {
       mobile,
@@ -119,7 +116,6 @@ export async function POST(request: Request) {
       circle,
       amount,
     });
-
 
     // ==================================================
     // MOBILE VALIDATION
@@ -136,7 +132,6 @@ export async function POST(request: Request) {
         }
       );
     }
-
 
     // ==================================================
     // OPERATOR VALIDATION
@@ -158,7 +153,6 @@ export async function POST(request: Request) {
       );
     }
 
-
     // ==================================================
     // CIRCLE VALIDATION
     // ==================================================
@@ -179,7 +173,6 @@ export async function POST(request: Request) {
       );
     }
 
-
     // ==================================================
     // AMOUNT VALIDATION
     // ==================================================
@@ -196,7 +189,6 @@ export async function POST(request: Request) {
       );
     }
 
-
     if (amount < 10) {
       return NextResponse.json(
         {
@@ -209,8 +201,6 @@ export async function POST(request: Request) {
       );
     }
 
-
-    // Recharge amount should have maximum 2 decimal places
     const decimalPlaces =
       (String(amount).split(".")[1] || "").length;
 
@@ -226,7 +216,6 @@ export async function POST(request: Request) {
       );
     }
 
-
     // ==================================================
     // UNIQUE TRANSACTION ID
     // ==================================================
@@ -234,9 +223,29 @@ export async function POST(request: Request) {
     const transactionId =
       `RYPR-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 
-
     console.log("TRANSACTION ID:", transactionId);
 
+    // ==================================================
+    // STRUCTURED RECHARGE DATA
+    // ==================================================
+
+    const rechargeData = {
+      bookingType: "MOBILE_PREPAID_RECHARGE",
+
+      recharge: {
+        mobile,
+        operator,
+        circle,
+      },
+
+      payment: {
+        amount,
+        currency: "INR",
+      },
+    };
+
+    const description =
+      JSON.stringify(rechargeData);
 
     // ==================================================
     // CREATE DATABASE TRANSACTION
@@ -252,8 +261,7 @@ export async function POST(request: Request) {
 
         category: "PREPAID_RECHARGE",
 
-        description:
-          `Mobile: ${mobile}, Operator: ${operator}, Circle: ${circle}`,
+        description,
 
         referenceId: mobile,
 
@@ -262,16 +270,15 @@ export async function POST(request: Request) {
         amount,
 
         status: "PENDING",
+
         updatedAt: new Date(),
       },
     });
-
 
     console.log(
       "TRANSACTION CREATED:",
       transaction.transactionId
     );
-
 
     // ==================================================
     // RESPONSE
@@ -281,26 +288,29 @@ export async function POST(request: Request) {
       {
         success: true,
 
-        message: "Recharge request created successfully.",
+        message:
+          "Recharge request created successfully.",
 
         transaction: {
           id: transaction.id,
 
-          transactionId: transaction.transactionId,
+          transactionId:
+            transaction.transactionId,
 
-          amount: transaction.amount.toString(),
+          amount:
+            transaction.amount.toString(),
 
-          status: transaction.status,
+          status:
+            transaction.status,
         },
+
+        recharge: rechargeData,
       },
       {
         status: 200,
       }
     );
-
-
   } catch (error) {
-
     console.error(
       "================================"
     );
@@ -314,11 +324,11 @@ export async function POST(request: Request) {
       "================================"
     );
 
-
     return NextResponse.json(
       {
         success: false,
-        message: "Server error. Please try again.",
+        message:
+          "Server error. Please try again.",
       },
       {
         status: 500,

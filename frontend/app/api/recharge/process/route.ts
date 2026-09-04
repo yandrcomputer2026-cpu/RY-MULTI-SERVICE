@@ -2,6 +2,37 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+type RechargeDescription = {
+  bookingType?: string;
+
+  recharge?: {
+    mobile?: string;
+    operator?: string;
+    circle?: string;
+  };
+
+  payment?: {
+    amount?: number;
+    currency?: string;
+  };
+};
+
+function parseRechargeDescription(
+  description: string | null
+): RechargeDescription {
+  if (!description) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(description) as RechargeDescription;
+  } catch {
+    // Old prepaid transactions used plain-text descriptions.
+    // They remain supported through referenceId/provider fallbacks below.
+    return {};
+  }
+}
+
 export async function POST(request: Request) {
   try {
     // ================= USER CHECK =================
@@ -20,10 +51,24 @@ export async function POST(request: Request) {
 
     // ================= REQUEST DATA =================
 
-    const body = await request.json();
+    let body: {
+      transactionId?: unknown;
+    };
+
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid request data.",
+        },
+        { status: 400 }
+      );
+    }
 
     const transactionId = String(
-      body.transactionId || ""
+      body.transactionId ?? ""
     ).trim();
 
     if (!transactionId) {
@@ -43,6 +88,7 @@ export async function POST(request: Request) {
         where: {
           transactionId,
           userId: user.id,
+          service: "MOBILE_PREPAID",
         },
       });
 
@@ -50,15 +96,51 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Transaction not found.",
+          message: "Prepaid recharge transaction not found.",
         },
         { status: 404 }
       );
     }
 
+    // ================= READ RECHARGE DETAILS =================
+
+    const details =
+      parseRechargeDescription(
+        transaction.description
+      );
+
+    const mobile =
+      details.recharge?.mobile ||
+      transaction.referenceId ||
+      "";
+
+    /*
+     * New transactions keep the real mobile operator in description.
+     * Old transactions may still have it in provider.
+     * Do not use RAZORPAY as the mobile operator.
+     */
+    const providerFallback =
+      transaction.provider &&
+      transaction.provider.toUpperCase() !== "RAZORPAY"
+        ? transaction.provider
+        : "";
+
+    const operator =
+      details.recharge?.operator ||
+      providerFallback;
+
+    const circle =
+      details.recharge?.circle || "";
+
+    const currency =
+      details.payment?.currency || "INR";
+
     // ================= ALREADY RECHARGED =================
 
-    if (transaction.status === "RECHARGE_SUCCESS") {
+    if (
+      transaction.status ===
+      "RECHARGE_SUCCESS"
+    ) {
       return NextResponse.json({
         success: true,
         message: "Recharge already completed.",
@@ -67,17 +149,30 @@ export async function POST(request: Request) {
           transactionId:
             transaction.transactionId,
 
-          mobile:
-            transaction.referenceId,
+          mobile,
 
-          operator:
-            transaction.provider,
+          operator,
+
+          circle,
 
           amount:
             transaction.amount.toString(),
 
+          currency,
+
           status:
             transaction.status,
+
+          paymentProvider:
+            transaction.razorpayPaymentId
+              ? "RAZORPAY"
+              : transaction.provider,
+
+          razorpayOrderId:
+            transaction.razorpayOrderId,
+
+          razorpayPaymentId:
+            transaction.razorpayPaymentId,
         },
       });
     }
@@ -99,8 +194,9 @@ export async function POST(request: Request) {
     // ================= TEST RECHARGE =================
     //
     // अभी यह TEST recharge है.
-    // बाद में वास्तविक recharge provider API
-    // यहाँ लगाया जाएगा.
+    // वास्तविक recharge provider API integration
+    // बाद में इसी section में लगाया जाएगा.
+    // =================================================
 
     const updatedTransaction =
       await prisma.transaction.update({
@@ -118,24 +214,36 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
 
-      message:
-        "Recharge successful.",
+      message: "Recharge successful.",
 
       recharge: {
         transactionId:
           updatedTransaction.transactionId,
 
-        mobile:
-          updatedTransaction.referenceId,
+        mobile,
 
-        operator:
-          updatedTransaction.provider,
+        operator,
+
+        circle,
 
         amount:
           updatedTransaction.amount.toString(),
 
+        currency,
+
         status:
           updatedTransaction.status,
+
+        paymentProvider:
+          updatedTransaction.razorpayPaymentId
+            ? "RAZORPAY"
+            : updatedTransaction.provider,
+
+        razorpayOrderId:
+          updatedTransaction.razorpayOrderId,
+
+        razorpayPaymentId:
+          updatedTransaction.razorpayPaymentId,
       },
     });
   } catch (error) {
@@ -147,9 +255,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-
-        message:
-          "Recharge processing failed.",
+        message: "Recharge processing failed.",
       },
       { status: 500 }
     );

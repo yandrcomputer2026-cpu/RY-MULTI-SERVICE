@@ -23,11 +23,19 @@ type ParsedDescription = {
   bookingType?: string;
 
   // ===============================
-  // MOBILE RECHARGE
+  // MOBILE RECHARGE - NEW JSON
   // ===============================
 
+  recharge?: {
+    mobile?: string;
+    operator?: string;
+    circle?: string;
+  };
+
+  // MOBILE RECHARGE - OLD / FLAT SUPPORT
   mobile?: string;
   operator?: string;
+  circle?: string;
 
   // ===============================
   // OLD / FLAT FLIGHT SUPPORT
@@ -62,6 +70,7 @@ type ParsedDescription = {
 
   payment?: {
     totalAmount?: number;
+    amount?: number;
     currency?: string;
   };
 
@@ -128,15 +137,70 @@ function parseDescription(
 
   const value = description.trim();
 
-  if (!value.startsWith("{")) {
-    return {};
+  // New structured JSON
+  if (value.startsWith("{")) {
+    try {
+      return JSON.parse(value) as ParsedDescription;
+    } catch {
+      return {};
+    }
   }
 
-  try {
-    return JSON.parse(value) as ParsedDescription;
-  } catch {
-    return {};
+  // Old prepaid recharge description support:
+  // "Mobile: 9876543210, Operator: jio, Circle: delhi"
+  const mobileMatch =
+    value.match(/Mobile:\s*([^,]+)/i);
+
+  const operatorMatch =
+    value.match(/Operator:\s*([^,]+)/i);
+
+  const circleMatch =
+    value.match(/Circle:\s*([^,]+)/i);
+
+  if (
+    mobileMatch ||
+    operatorMatch ||
+    circleMatch
+  ) {
+    return {
+      mobile: mobileMatch?.[1]?.trim(),
+      operator: operatorMatch?.[1]?.trim(),
+      circle: circleMatch?.[1]?.trim(),
+    };
   }
+
+  return {};
+}
+
+// ===============================
+// MOBILE RECHARGE HELPERS
+// ===============================
+
+function isMobilePrepaidService(
+  service: string,
+  category?: string | null
+) {
+  return (
+    service === "MOBILE_PREPAID" ||
+    service === "PREPAID_RECHARGE" ||
+    service === "MOBILE_RECHARGE" ||
+    category === "PREPAID_RECHARGE"
+  );
+}
+
+function formatValue(value?: string) {
+  if (!value) {
+    return "-";
+  }
+
+  return value
+    .split("-")
+    .map(
+      (part) =>
+        part.charAt(0).toUpperCase() +
+        part.slice(1)
+    )
+    .join(" ");
 }
 
 // ===============================
@@ -145,6 +209,7 @@ function parseDescription(
 
 function getTitle(
   service: string,
+  category: string | null,
   description: ParsedDescription
 ) {
   if (service === "TRAIN_BOOKING") {
@@ -175,10 +240,12 @@ function getTitle(
   }
 
   if (
-    service === "PREPAID_RECHARGE" ||
-    service === "MOBILE_RECHARGE"
+    isMobilePrepaidService(
+      service,
+      category
+    )
   ) {
-    return "Mobile Recharge";
+    return "Mobile Prepaid Recharge";
   }
 
   return service.replaceAll("_", " ");
@@ -188,7 +255,10 @@ function getTitle(
 // ICON
 // ===============================
 
-function getIcon(service: string) {
+function getIcon(
+  service: string,
+  category: string | null
+) {
   if (service === "TRAIN_BOOKING") {
     return "🚆";
   }
@@ -206,8 +276,10 @@ function getIcon(service: string) {
   }
 
   if (
-    service === "PREPAID_RECHARGE" ||
-    service === "MOBILE_RECHARGE"
+    isMobilePrepaidService(
+      service,
+      category
+    )
   ) {
     return "📱";
   }
@@ -347,15 +419,23 @@ export default async function HistoryPage() {
                     transaction.description
                   );
 
+                const mobileRecharge =
+                  isMobilePrepaidService(
+                    transaction.service,
+                    transaction.category
+                  );
+
                 const title =
                   getTitle(
                     transaction.service,
+                    transaction.category,
                     details
                   );
 
                 const icon =
                   getIcon(
-                    transaction.service
+                    transaction.service,
+                    transaction.category
                   );
 
                 const status =
@@ -377,6 +457,30 @@ export default async function HistoryPage() {
                   Number(
                     transaction.amount
                   );
+
+                const rechargeMobile =
+                  details.recharge?.mobile ||
+                  details.mobile ||
+                  transaction.referenceId ||
+                  "-";
+
+                const providerFallback =
+                  transaction.provider &&
+                  transaction.provider.toUpperCase() !==
+                    "RAZORPAY"
+                    ? transaction.provider
+                    : "";
+
+                const rechargeOperator =
+                  details.recharge?.operator ||
+                  details.operator ||
+                  providerFallback ||
+                  "-";
+
+                const rechargeCircle =
+                  details.recharge?.circle ||
+                  details.circle ||
+                  "-";
 
                 return (
                   <div
@@ -464,8 +568,8 @@ export default async function HistoryPage() {
                         </p>
 
                         <p className="mt-1 text-sm text-yellow-700">
-                          यह booking अभी confirmed नहीं है।
-                          Payment successful होने के बाद ही इसे confirmed ticket माना जाएगा।
+                          यह transaction अभी complete नहीं हुआ है।
+                          Payment successful होने के बाद final status दिखाई देगा।
                         </p>
                       </div>
                     )}
@@ -520,6 +624,104 @@ export default async function HistoryPage() {
                         </p>
                       </div>
                     </div>
+
+                    {/* ================= MOBILE PREPAID DETAILS ================= */}
+
+                    {mobileRecharge && (
+                      <div className="mt-5 grid grid-cols-2 gap-4 rounded-xl bg-gray-50 p-4 md:grid-cols-4">
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Mobile Number
+                          </p>
+
+                          <p className="font-semibold text-gray-900">
+                            {rechargeMobile}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Operator
+                          </p>
+
+                          <p className="font-semibold text-gray-900">
+                            {formatValue(
+                              rechargeOperator
+                            )}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Circle
+                          </p>
+
+                          <p className="font-semibold text-gray-900">
+                            {formatValue(
+                              rechargeCircle
+                            )}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Recharge Status
+                          </p>
+
+                          <p className="font-semibold text-gray-900">
+                            {status}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Payment Provider
+                          </p>
+
+                          <p className="font-semibold text-gray-900">
+                            {transaction.razorpayPaymentId
+                              ? "RAZORPAY"
+                              : transaction.provider ||
+                                "-"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Payment ID
+                          </p>
+
+                          <p className="break-all text-sm font-medium text-gray-900">
+                            {transaction.razorpayPaymentId ||
+                              "-"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Order ID
+                          </p>
+
+                          <p className="break-all text-sm font-medium text-gray-900">
+                            {transaction.razorpayOrderId ||
+                              "-"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Currency
+                          </p>
+
+                          <p className="font-semibold text-gray-900">
+                            {details.payment
+                              ?.currency ||
+                              "INR"}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {/* ================= TRAIN DETAILS ================= */}
 
@@ -779,6 +981,45 @@ export default async function HistoryPage() {
                     {/* ================= ACTIONS ================= */}
 
                     <div className="mt-5 flex flex-wrap gap-3">
+
+                      {/* MOBILE PREPAID */}
+
+                      {mobileRecharge &&
+                        status ===
+                          "RECHARGE_SUCCESS" && (
+                        <Link
+                          href={`/history/recharge/${transaction.transactionId}`}
+                          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                        >
+                          📱 View Recharge Receipt
+                        </Link>
+                      )}
+
+                      {mobileRecharge &&
+                        isPending && (
+                        <Link
+                          href={`/service1/mobile-prepaid/payment?transactionId=${encodeURIComponent(
+                            transaction.transactionId
+                          )}&amount=${encodeURIComponent(
+                            Number.isFinite(amount)
+                              ? String(amount)
+                              : "0"
+                          )}`}
+                          className="rounded-lg bg-yellow-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-yellow-600"
+                        >
+                          💳 Complete Payment
+                        </Link>
+                      )}
+
+                      {mobileRecharge &&
+                        isFailed && (
+                        <Link
+                          href="/service1/mobile-prepaid"
+                          className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+                        >
+                          ↻ Recharge Again
+                        </Link>
+                      )}
 
                       {/* TRAIN */}
 
