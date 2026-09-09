@@ -345,14 +345,74 @@ export default async function DashboardPage() {
   </div>
 </details>
 
-          <Link
-            href="/wallet"
-            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
-          >
-            <span>👛</span>
-            Settlement
-          </Link>
+{/* ================= MANAGE WALLET DROPDOWN ================= */}
+<details className="group mb-1">
+  <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-4 py-3 text-gray-700 transition hover:bg-purple-50 hover:text-purple-700">
+    <div className="flex items-center gap-3">
+      <span>👛</span>
+      <span>Manage Wallet</span>
+    </div>
 
+    <span className="text-lg transition-transform duration-200 group-open:rotate-90">
+      ›
+    </span>
+  </summary>
+
+  <div className="ml-6 mt-1 border-l-2 border-purple-100 pl-3">
+    {/* Wallet */}
+    <Link
+      href="/wallet"
+      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-purple-50 hover:text-purple-700"
+    >
+      <span>👛</span>
+
+      <div>
+        <p className="font-semibold">
+          Wallet
+        </p>
+        <p className="text-xs text-gray-400">
+          Wallet Details
+        </p>
+      </div>
+    </Link>
+
+    {/* Add Money */}
+    <Link
+      href="/wallet"
+      className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-purple-50 hover:text-purple-700"
+    >
+      <span>➕</span>
+
+      <div>
+        <p className="font-semibold">
+          Add Money
+        </p>
+        <p className="text-xs text-gray-400">
+          Wallet Funding Setup
+        </p>
+      </div>
+    </Link>
+
+    {/* Bank Settlement */}
+    <Link
+      href="/wallet"
+      className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-purple-50 hover:text-purple-700"
+    >
+      <span>🏦</span>
+
+      <div>
+        <p className="font-semibold">
+          Bank Settlement
+        </p>
+        <p className="text-xs text-gray-400">
+          Settlement Setup
+        </p>
+      </div>
+    </Link>
+  </div>
+</details>
+
+          {/* ================= REPORTS / HISTORY ================= */}
           <Link
             href="/history"
             className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
@@ -361,14 +421,68 @@ export default async function DashboardPage() {
             Reports / History
           </Link>
 
-          <Link
-            href="/account"
-            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
-          >
-            <span>👤</span>
-            Account Details
-          </Link>
+          {/* ================= ACCOUNT DETAILS DROPDOWN ================= */}
+          <details className="group mb-1">
+            <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-4 py-3 text-gray-700 transition hover:bg-green-50 hover:text-green-700">
+              <div className="flex items-center gap-3">
+                <span>👤</span>
+                <span>Account Details</span>
+              </div>
 
+              <span className="text-lg transition-transform duration-200 group-open:rotate-90">
+                ›
+              </span>
+            </summary>
+
+            <div className="ml-6 mt-1 border-l-2 border-green-100 pl-3">
+              {/* My Profile */}
+              <Link
+                href="/account"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
+              >
+                <span>👤</span>
+
+                <div>
+                  <p className="font-semibold">My Profile</p>
+                  <p className="text-xs text-gray-400">
+                    Account Details
+                  </p>
+                </div>
+              </Link>
+
+              {/* Change Password */}
+              <Link
+                href="/change-password"
+                className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
+              >
+                <span>🔐</span>
+
+                <div>
+                  <p className="font-semibold">Change Password</p>
+                  <p className="text-xs text-gray-400">
+                    Update Account Password
+                  </p>
+                </div>
+              </Link>
+
+              {/* My History */}
+              <Link
+                href="/history"
+                className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
+              >
+                <span>📋</span>
+
+                <div>
+                  <p className="font-semibold">My History</p>
+                  <p className="text-xs text-gray-400">
+                    Transaction History
+                  </p>
+                </div>
+              </Link>
+            </div>
+          </details>
+
+          {/* ================= KYC ================= */}
           <Link
             href="/kyc"
             className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
@@ -377,6 +491,7 @@ export default async function DashboardPage() {
             KYC
           </Link>
 
+          {/* ================= ADMIN PANEL ================= */}
           {user.role === "ADMIN" && (
             <Link
               href="/admin"
@@ -388,7 +503,7 @@ export default async function DashboardPage() {
           )}
         </nav>
       </aside>
-
+      
       {/* ================= MAIN CONTENT ================= */}
       <section className="px-5 py-7 lg:ml-[240px] lg:px-8">
         {/* Heading */}
