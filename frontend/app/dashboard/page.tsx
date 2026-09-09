@@ -14,27 +14,51 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-100">
-      {/* ================= HEADER ================= */}
-      <header className="bg-white px-6 py-4 shadow-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <h1 className="text-xl font-bold text-blue-700">
-            RY MULTI SERVICE
-          </h1>
+    <main className="min-h-screen bg-slate-50">
+      {/* ================= TOP HEADER ================= */}
+      <header className="sticky top-0 z-30 border-b bg-white">
+        <div className="flex h-20 items-center justify-between px-5 lg:pl-[260px] lg:pr-8">
+          <div className="lg:hidden">
+            <h1 className="text-xl font-bold text-blue-700">
+              RY MULTI SERVICE
+            </h1>
+          </div>
 
-          <div className="flex items-center gap-6">
+          <div className="hidden lg:block">
+            <h2 className="text-lg font-semibold text-gray-700">
+              Welcome, {user.name}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Wallet */}
             <Link
-              href="/"
-              className="text-gray-600 hover:text-blue-600"
+              href="/wallet"
+              className="hidden rounded-xl border bg-white px-4 py-2 shadow-sm sm:block"
             >
-              Home
+              <p className="text-xs font-semibold text-gray-400">
+                MY WALLET
+              </p>
+
+              <p className="text-sm font-bold text-gray-800">
+                Wallet Setup
+              </p>
             </Link>
 
+            {/* Add Money */}
             <Link
-              href="/history"
-              className="text-gray-600 hover:text-blue-600"
+              href="/wallet"
+              className="rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow hover:bg-emerald-700"
             >
-              My History
+              Add Money
+            </Link>
+
+            {/* Account */}
+            <Link
+              href="/account"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 text-xl"
+            >
+              👤
             </Link>
 
             <LogoutButton />
@@ -42,227 +66,325 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      {/* ================= DASHBOARD ================= */}
-      <div className="mx-auto max-w-6xl px-6 py-10">
-        {/* Welcome */}
-        <h2 className="text-3xl font-bold text-gray-900">
-          Welcome {user.name} 👋
-        </h2>
+      {/* ================= LEFT SIDEBAR ================= */}
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[240px] border-r bg-white lg:block">
+        <div className="border-b px-6 py-5">
+          <h1 className="text-2xl font-extrabold text-blue-700">
+            RY MULTI
+          </h1>
 
-        <p className="mt-2 text-gray-600">
-          आपका Login सफल हो गया है।
-        </p>
-
-        {/* ================= PROFILE ================= */}
-        <div className="mt-8 rounded-xl bg-white p-6 shadow">
-          <h3 className="text-2xl font-bold text-gray-900">
-            आपकी Profile
-          </h3>
-
-          <div className="mt-5 space-y-4 text-gray-700">
-            <p>
-              <span className="font-bold">Name:</span>{" "}
-              {user.name}
-            </p>
-
-            <p>
-              <span className="font-bold">Email:</span>{" "}
-              {user.email}
-            </p>
-
-            <p>
-              <span className="font-bold">Mobile:</span>{" "}
-              {user.mobile}
-            </p>
-
-            <p>
-              <span className="font-bold">Role:</span>{" "}
-              {user.role}
-            </p>
-          </div>
+          <p className="text-sm font-semibold text-gray-500">
+            SERVICE
+          </p>
         </div>
 
-        {/* ================= MY HISTORY ================= */}
-        <Link
-          href="/history"
-          className="mt-8 block rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white shadow transition hover:-translate-y-1 hover:shadow-lg"
-        >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="text-3xl">📋</div>
-
-              <h3 className="mt-2 text-2xl font-bold">
-                My History
-              </h3>
-
-              <p className="mt-2 text-blue-100">
-                अपनी सभी bookings और transactions एक ही जगह देखें।
-              </p>
-            </div>
-
-            <div className="text-lg font-semibold">
-              View History →
-            </div>
-          </div>
-        </Link>
-
-        {/* ================= MAIN CATEGORIES ================= */}
-        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <nav className="px-3 py-5">
           <Link
-            href="/recharge"
-            className="block rounded-xl bg-white p-6 shadow transition hover:-translate-y-1 hover:shadow-lg"
+            href="/dashboard"
+            className="mb-2 flex items-center gap-3 rounded-lg bg-blue-50 px-4 py-3 font-semibold text-blue-700"
           >
-            <div className="text-4xl">📱</div>
-
-            <h3 className="mt-4 text-xl font-bold text-gray-900">
-              Recharge
-            </h3>
-
-            <p className="mt-2 text-gray-500">
-              Mobile Prepaid और DTH Recharge services।
-            </p>
-
-            <p className="mt-4 font-semibold text-blue-600">
-              Recharge खोलें →
-            </p>
+            <span>▦</span>
+            Dashboard
           </Link>
 
           <Link
-            href="/utility"
-            className="block rounded-xl bg-white p-6 shadow transition hover:-translate-y-1 hover:shadow-lg"
+            href="/recharge"
+            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
           >
-            <div className="text-4xl">💡</div>
-
-            <h3 className="mt-4 text-xl font-bold text-gray-900">
-              Utility
-            </h3>
-
-            <p className="mt-2 text-gray-500">
-              Electricity, Mobile Postpaid और FASTag services।
-            </p>
-
-            <p className="mt-4 font-semibold text-blue-600">
-              Utility खोलें →
-            </p>
+            <span>📱</span>
+            Recharge
           </Link>
 
           <Link
             href="/banking"
-            className="block rounded-xl bg-white p-6 shadow transition hover:-translate-y-1 hover:shadow-lg"
+            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
           >
-            <div className="text-4xl">🏦</div>
-
-            <h3 className="mt-4 text-xl font-bold text-gray-900">
-              Banking
-            </h3>
-
-            <p className="mt-2 text-gray-500">
-              AEPS, Money Transfer और UPI Cash services।
-            </p>
-
-            <p className="mt-4 font-semibold text-blue-600">
-              Banking खोलें →
-            </p>
+            <span>🏦</span>
+            Banking
           </Link>
 
           <Link
             href="/travels"
-            className="block rounded-xl bg-white p-6 shadow transition hover:-translate-y-1 hover:shadow-lg"
+            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
           >
-            <div className="text-4xl">✈️</div>
+            <span>✈️</span>
+            Travels
+          </Link>
 
-            <h3 className="mt-4 text-xl font-bold text-gray-900">
-              Travels
-            </h3>
-
-            <p className="mt-2 text-gray-500">
-              Train, Bus, Flight और Hotel booking।
-            </p>
-
-            <p className="mt-4 font-semibold text-blue-600">
-              Travels खोलें →
-            </p>
+          <Link
+            href="/utility"
+            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
+          >
+            <span>💡</span>
+            Utility
           </Link>
 
           <Link
             href="/wallet"
-            className="block rounded-xl bg-white p-6 shadow transition hover:-translate-y-1 hover:shadow-lg"
+            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
           >
-            <div className="text-4xl">👛</div>
+            <span>👛</span>
+            Settlement
+          </Link>
 
-            <h3 className="mt-4 text-xl font-bold text-gray-900">
-              Manage Wallet
-            </h3>
-
-            <p className="mt-2 text-gray-500">
-              Wallet, Add Money और Bank Settlement।
-            </p>
-
-            <p className="mt-4 font-semibold text-blue-600">
-              Wallet खोलें →
-            </p>
+          <Link
+            href="/history"
+            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
+          >
+            <span>📋</span>
+            Reports / History
           </Link>
 
           <Link
             href="/account"
-            className="block rounded-xl bg-white p-6 shadow transition hover:-translate-y-1 hover:shadow-lg"
+            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
           >
-            <div className="text-4xl">👤</div>
-
-            <h3 className="mt-4 text-xl font-bold text-gray-900">
-              Account Details
-            </h3>
-
-            <p className="mt-2 text-gray-500">
-              Profile, password और account information।
-            </p>
-
-            <p className="mt-4 font-semibold text-blue-600">
-              Account खोलें →
-            </p>
+            <span>👤</span>
+            Account Details
           </Link>
 
           <Link
             href="/kyc"
-            className="block rounded-xl bg-white p-6 shadow transition hover:-translate-y-1 hover:shadow-lg"
+            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
           >
-            <div className="text-4xl">🪪</div>
-
-            <h3 className="mt-4 text-xl font-bold text-gray-900">
-              KYC
-            </h3>
-
-            <p className="mt-2 text-gray-500">
-              KYC status और verification setup।
-            </p>
-
-            <p className="mt-4 font-semibold text-blue-600">
-              KYC खोलें →
-            </p>
+            <span>🪪</span>
+            KYC
           </Link>
 
           {user.role === "ADMIN" && (
             <Link
               href="/admin"
-              className="block rounded-xl border border-green-200 bg-green-50 p-6 shadow transition hover:-translate-y-1 hover:shadow-lg"
+              className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 font-semibold text-green-700 hover:bg-green-50"
             >
-              <div className="text-4xl">🛡️</div>
-
-              <h3 className="mt-4 text-xl font-bold text-green-900">
-                Admin Panel
-              </h3>
-
-              <p className="mt-2 text-green-700">
-                Retailer, Distributor और Master Distributor management।
-              </p>
-
-              <p className="mt-4 font-semibold text-green-700">
-                Admin Panel खोलें →
-              </p>
+              <span>🛡️</span>
+              Admin Panel
             </Link>
           )}
+        </nav>
+      </aside>
+
+      {/* ================= MAIN CONTENT ================= */}
+      <section className="px-5 py-7 lg:ml-[240px] lg:px-8">
+        {/* Heading */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-1 rounded bg-emerald-500" />
+
+              <h2 className="text-2xl font-extrabold text-slate-800">
+                ALL SERVICES
+              </h2>
+            </div>
+
+            <p className="mt-2 text-sm text-gray-500">
+              RY MULTI SERVICE की सभी services एक ही जगह।
+            </p>
+          </div>
+
+          {/* Search UI */}
+          <div className="flex w-full items-center rounded-full border bg-white px-5 py-3 shadow-sm md:w-[300px]">
+            <span className="mr-3">🔍</span>
+
+            <input
+              type="text"
+              placeholder="Search service..."
+              className="w-full bg-transparent text-sm outline-none"
+            />
+          </div>
         </div>
-      </div>
+
+        {/* ================= HERO BANNER ================= */}
+        <div className="mt-7 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 px-7 py-10 text-white shadow">
+          <div className="grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wider text-blue-100">
+                RY MULTI SERVICE
+              </p>
+
+              <h3 className="mt-3 text-3xl font-extrabold md:text-4xl">
+                Everything You Need,
+                <br />
+                Right at Your Fingertips
+              </h3>
+
+              <p className="mt-4 max-w-xl text-blue-100">
+                Recharge, Utility, Banking, Travels, Wallet और
+                account services एक ही platform पर।
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  href="/recharge"
+                  className="rounded-lg bg-white px-5 py-3 font-semibold text-blue-700"
+                >
+                  Start Recharge
+                </Link>
+
+                <Link
+                  href="/history"
+                  className="rounded-lg border border-white px-5 py-3 font-semibold text-white"
+                >
+                  View History
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="rounded-xl bg-white/15 p-5 backdrop-blur">
+                <div className="text-4xl">📱</div>
+                <p className="mt-2 text-sm font-semibold">Recharge</p>
+              </div>
+
+              <div className="rounded-xl bg-white/15 p-5 backdrop-blur">
+                <div className="text-4xl">🏦</div>
+                <p className="mt-2 text-sm font-semibold">Banking</p>
+              </div>
+
+              <div className="rounded-xl bg-white/15 p-5 backdrop-blur">
+                <div className="text-4xl">✈️</div>
+                <p className="mt-2 text-sm font-semibold">Travel</p>
+              </div>
+
+              <div className="rounded-xl bg-white/15 p-5 backdrop-blur">
+                <div className="text-4xl">💡</div>
+                <p className="mt-2 text-sm font-semibold">Utility</p>
+              </div>
+
+              <div className="rounded-xl bg-white/15 p-5 backdrop-blur">
+                <div className="text-4xl">👛</div>
+                <p className="mt-2 text-sm font-semibold">Wallet</p>
+              </div>
+
+              <div className="rounded-xl bg-white/15 p-5 backdrop-blur">
+                <div className="text-4xl">📋</div>
+                <p className="mt-2 text-sm font-semibold">History</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ================= TRENDING SERVICES ================= */}
+        <div className="mt-10">
+          <div className="mb-5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-1 rounded bg-emerald-500" />
+
+              <h3 className="text-xl font-extrabold text-slate-800">
+                TRENDING SERVICES
+              </h3>
+            </div>
+
+            <span className="text-sm font-semibold text-gray-500">
+              ACTIVE SERVICES
+            </span>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <Link
+              href="/recharge"
+              className="rounded-xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="text-4xl">📱</div>
+              <h4 className="mt-4 text-lg font-bold">Mobile Recharge</h4>
+              <p className="mt-2 text-sm text-gray-500">
+                Prepaid और DTH recharge।
+              </p>
+            </Link>
+
+            <Link
+              href="/utility"
+              className="rounded-xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="text-4xl">💡</div>
+              <h4 className="mt-4 text-lg font-bold">Utility Bills</h4>
+              <p className="mt-2 text-sm text-gray-500">
+                Electricity और Postpaid।
+              </p>
+            </Link>
+
+            <Link
+              href="/banking"
+              className="rounded-xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="text-4xl">🏦</div>
+              <h4 className="mt-4 text-lg font-bold">Banking</h4>
+              <p className="mt-2 text-sm text-gray-500">
+                AEPS, Money Transfer और UPI Cash।
+              </p>
+            </Link>
+
+            <Link
+              href="/travels"
+              className="rounded-xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="text-4xl">✈️</div>
+              <h4 className="mt-4 text-lg font-bold">Travel Booking</h4>
+              <p className="mt-2 text-sm text-gray-500">
+                Train, Bus, Flight और Hotel।
+              </p>
+            </Link>
+
+            <Link
+              href="/wallet"
+              className="rounded-xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="text-4xl">👛</div>
+              <h4 className="mt-4 text-lg font-bold">Wallet</h4>
+              <p className="mt-2 text-sm text-gray-500">
+                Add Money और Settlement setup।
+              </p>
+            </Link>
+
+            <Link
+              href="/account"
+              className="rounded-xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="text-4xl">👤</div>
+              <h4 className="mt-4 text-lg font-bold">Account</h4>
+              <p className="mt-2 text-sm text-gray-500">
+                Profile और password settings।
+              </p>
+            </Link>
+
+            <Link
+              href="/kyc"
+              className="rounded-xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="text-4xl">🪪</div>
+              <h4 className="mt-4 text-lg font-bold">KYC</h4>
+              <p className="mt-2 text-sm text-gray-500">
+                KYC status और verification।
+              </p>
+            </Link>
+
+            <Link
+              href="/history"
+              className="rounded-xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="text-4xl">📊</div>
+              <h4 className="mt-4 text-lg font-bold">Reports</h4>
+              <p className="mt-2 text-sm text-gray-500">
+                Booking और transaction history।
+              </p>
+            </Link>
+
+            {user.role === "ADMIN" && (
+              <Link
+                href="/admin"
+                className="rounded-xl border border-green-200 bg-green-50 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+              >
+                <div className="text-4xl">🛡️</div>
+                <h4 className="mt-4 text-lg font-bold text-green-900">
+                  Admin Panel
+                </h4>
+                <p className="mt-2 text-sm text-green-700">
+                  Retailer और distributor management।
+                </p>
+              </Link>
+            )}
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
