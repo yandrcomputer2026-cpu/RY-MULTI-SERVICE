@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function TrainPage() {
@@ -201,6 +202,17 @@ export default function TrainPage() {
           </div>
 
         </div>
+
+        {/* BACK */}
+        <div className="mx-auto mt-10 max-w-4xl">
+          <Link
+            href="/travels"
+            className="inline-block rounded-lg bg-gray-800 px-6 py-3 font-semibold text-white hover:bg-gray-900"
+          >
+            ← Travels पर वापस जाएँ
+          </Link>
+        </div>
+
       </div>
     </main>
   );

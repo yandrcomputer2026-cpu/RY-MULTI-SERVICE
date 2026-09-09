@@ -290,10 +290,10 @@ export default function HotelBookingPage() {
             </Link>
 
             <Link
-              href="/service2"
+              href="/travels"
               className="text-gray-600 hover:text-blue-600"
             >
-              Service 2
+              travels
             </Link>
 
           </div>
@@ -766,10 +766,10 @@ export default function HotelBookingPage() {
         <div className="mt-10">
 
           <Link
-            href="/service2"
+            href="/travels"
             className="inline-block bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-900"
           >
-            ← Service 2 पर वापस जाएँ
+            ← travels पर वापस जाएँ
           </Link>
 
         </div>
