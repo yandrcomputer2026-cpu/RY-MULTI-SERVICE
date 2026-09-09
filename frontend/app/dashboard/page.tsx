@@ -87,13 +87,53 @@ export default async function DashboardPage() {
             Dashboard
           </Link>
 
-          <Link
-            href="/recharge"
-            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
-          >
-            <span>📱</span>
-            Recharge
-          </Link>
+{/* ================= RECHARGE DROPDOWN ================= */}
+<details className="group mb-1">
+  <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-4 py-3 text-gray-700 transition hover:bg-blue-50 hover:text-blue-700">
+    <div className="flex items-center gap-3">
+      <span>📱</span>
+      <span>Recharge</span>
+    </div>
+
+    <span className="text-lg transition-transform duration-200 group-open:rotate-90">
+      ›
+    </span>
+  </summary>
+
+  <div className="ml-6 mt-1 border-l-2 border-blue-100 pl-3">
+    <Link
+      href="/service1/mobile-prepaid"
+      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-blue-50 hover:text-blue-700"
+    >
+      <span>📲</span>
+
+      <div>
+        <p className="font-semibold">
+          Mobile Prepaid
+        </p>
+        <p className="text-xs text-gray-400">
+          Mobile Recharge
+        </p>
+      </div>
+    </Link>
+
+    <Link
+      href="/service1/dth"
+      className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-blue-50 hover:text-blue-700"
+    >
+      <span>📺</span>
+
+      <div>
+        <p className="font-semibold">
+          DTH Recharge
+        </p>
+        <p className="text-xs text-gray-400">
+          DTH Customer Recharge
+        </p>
+      </div>
+    </Link>
+  </div>
+</details>
 
           <Link
             href="/banking"
