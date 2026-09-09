@@ -135,13 +135,103 @@ export default async function DashboardPage() {
   </div>
 </details>
 
-          <Link
-            href="/banking"
-            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
-          >
-            <span>🏦</span>
-            Banking
-          </Link>
+{/* ================= BANKING DROPDOWN ================= */}
+<details className="group mb-1">
+  <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-4 py-3 text-gray-700 transition hover:bg-green-50 hover:text-green-700">
+    <div className="flex items-center gap-3">
+      <span>🏦</span>
+      <span>Banking</span>
+    </div>
+
+    <span className="text-lg transition-transform duration-200 group-open:rotate-90">
+      ›
+    </span>
+  </summary>
+
+  <div className="ml-6 mt-1 border-l-2 border-green-100 pl-3">
+    {/* AEPS */}
+    <details className="group/aeps">
+      <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700">
+        <div className="flex items-center gap-3">
+          <span>🪪</span>
+          <span className="font-semibold">AEPS</span>
+        </div>
+
+        <span className="transition-transform duration-200 group-open/aeps:rotate-90">
+          ›
+        </span>
+      </summary>
+
+      <div className="ml-5 mt-1 space-y-1 border-l border-gray-200 pl-3">
+        <Link
+          href="/service2/aeps/withdraw"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
+        >
+          <span>💵</span>
+          Cash Withdrawal
+        </Link>
+
+        <Link
+          href="/service2/aeps/balance"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
+        >
+          <span>💳</span>
+          Balance Enquiry
+        </Link>
+
+        <Link
+          href="/service2/aeps/mini-statement"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
+        >
+          <span>📄</span>
+          Mini Statement
+        </Link>
+
+        <Link
+          href="/service2/aeps/deposit"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
+        >
+          <span>💰</span>
+          Cash Deposit
+        </Link>
+      </div>
+    </details>
+
+    {/* Money Transfer */}
+    <Link
+      href="/service2/money-transfer"
+      className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
+    >
+      <span>💸</span>
+
+      <div>
+        <p className="font-semibold">
+          Money Transfer
+        </p>
+        <p className="text-xs text-gray-400">
+          Bank Transfer
+        </p>
+      </div>
+    </Link>
+
+    {/* UPI Cash */}
+    <Link
+      href="/service2/upi-cash"
+      className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
+    >
+      <span>📲</span>
+
+      <div>
+        <p className="font-semibold">
+          UPI Cash
+        </p>
+        <p className="text-xs text-gray-400">
+          QR Payment
+        </p>
+      </div>
+    </Link>
+  </div>
+</details>
 
           <Link
             href="/travels"
