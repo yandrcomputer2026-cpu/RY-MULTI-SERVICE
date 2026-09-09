@@ -233,21 +233,117 @@ export default async function DashboardPage() {
   </div>
 </details>
 
-          <Link
-            href="/travels"
-            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
-          >
-            <span>✈️</span>
-            Travels
-          </Link>
+{/* ================= TRAVELS DROPDOWN ================= */}
+<details className="group mb-1">
+  <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-4 py-3 text-gray-700 transition hover:bg-blue-50 hover:text-blue-700">
+    <div className="flex items-center gap-3">
+      <span>✈️</span>
+      <span>Travels</span>
+    </div>
 
-          <Link
-            href="/utility"
-            className="mb-1 flex items-center gap-3 rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100"
-          >
-            <span>💡</span>
-            Utility
-          </Link>
+    <span className="text-lg transition-transform duration-200 group-open:rotate-90">
+      ›
+    </span>
+  </summary>
+
+  <div className="ml-6 mt-1 border-l-2 border-blue-100 pl-3">
+    <Link
+      href="/service2/train"
+      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-blue-50 hover:text-blue-700"
+    >
+      <span>🚆</span>
+      <span className="font-semibold">Train Booking</span>
+    </Link>
+
+    <Link
+      href="/service2/bus"
+      className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-blue-50 hover:text-blue-700"
+    >
+      <span>🚌</span>
+      <span className="font-semibold">Bus Booking</span>
+    </Link>
+
+    <Link
+      href="/service2/flight"
+      className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-blue-50 hover:text-blue-700"
+    >
+      <span>✈️</span>
+      <span className="font-semibold">Flight Booking</span>
+    </Link>
+
+    <Link
+      href="/service2/hotel"
+      className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-blue-50 hover:text-blue-700"
+    >
+      <span>🏨</span>
+      <span className="font-semibold">Hotel Booking</span>
+    </Link>
+  </div>
+</details>
+
+{/* ================= UTILITY DROPDOWN ================= */}
+<details className="group mb-1">
+  <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-4 py-3 text-gray-700 transition hover:bg-blue-50 hover:text-blue-700">
+    <div className="flex items-center gap-3">
+      <span>💡</span>
+      <span>Utility</span>
+    </div>
+
+    <span className="text-lg transition-transform duration-200 group-open:rotate-90">
+      ›
+    </span>
+  </summary>
+
+  <div className="ml-6 mt-1 border-l-2 border-amber-100 pl-3">
+    {/* Electricity */}
+    <Link
+      href="/service1/electricity"
+      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-amber-50 hover:text-amber-700"
+    >
+      <span>⚡</span>
+
+      <div>
+        <p className="font-semibold">
+          Electricity Bill
+        </p>
+        <p className="text-xs text-gray-400">
+          Electricity Bill Payment
+        </p>
+      </div>
+    </Link>
+
+    {/* Mobile Postpaid */}
+    <Link
+      href="/service1/mobile-postpaid"
+      className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-amber-50 hover:text-amber-700"
+    >
+      <span>📱</span>
+
+      <div>
+        <p className="font-semibold">
+          Mobile Postpaid
+        </p>
+        <p className="text-xs text-gray-400">
+          Postpaid Bill Payment
+        </p>
+      </div>
+    </Link>
+
+    {/* FASTag */}
+    <div className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-400">
+      <span>🚗</span>
+
+      <div>
+        <p className="font-semibold text-gray-500">
+          FASTag Recharge
+        </p>
+        <p className="text-xs text-orange-500">
+          Coming Soon
+        </p>
+      </div>
+    </div>
+  </div>
+</details>
 
           <Link
             href="/wallet"
