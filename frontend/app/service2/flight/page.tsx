@@ -324,10 +324,10 @@ export default function FlightPage() {
             </Link>
 
             <Link
-              href="/travels"
+              href="/Travels"
               className="text-gray-600 hover:text-blue-600"
             >
-              travels
+              Travels
             </Link>
 
           </div>

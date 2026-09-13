@@ -111,18 +111,13 @@ export default function BusBookingPage() {
 
   return (
     <main className="min-h-screen bg-gray-100">
-
-      {/* HEADER */}
-
       <header className="bg-white shadow-sm px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-
           <h1 className="text-xl font-bold text-blue-700">
             RY MULTI SERVICE
           </h1>
 
           <div className="flex items-center gap-6">
-
             <Link
               href="/dashboard"
               className="text-gray-600 hover:text-blue-600"
@@ -134,21 +129,14 @@ export default function BusBookingPage() {
               href="/travels"
               className="text-gray-600 hover:text-blue-600"
             >
-              travels
+              Travels
             </Link>
-
           </div>
         </div>
       </header>
 
-      {/* MAIN */}
-
       <div className="max-w-6xl mx-auto px-6 py-10">
-
-        {/* PAGE TITLE */}
-
         <div className="mb-8">
-
           <h2 className="text-3xl font-bold text-gray-900">
             🚌 Bus Booking
           </h2>
@@ -156,21 +144,14 @@ export default function BusBookingPage() {
           <p className="text-gray-600 mt-2">
             अपने शहर से destination तक bus search और booking करें।
           </p>
-
         </div>
 
-        {/* SEARCH BOX */}
-
         <div className="bg-white rounded-xl shadow p-6">
-
           <h3 className="text-xl font-bold text-gray-900 mb-6">
             Search Buses
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
-            {/* FROM */}
-
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 From
@@ -184,8 +165,6 @@ export default function BusBookingPage() {
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-
-            {/* TO */}
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -201,8 +180,6 @@ export default function BusBookingPage() {
               />
             </div>
 
-            {/* DATE */}
-
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Journey Date
@@ -216,10 +193,7 @@ export default function BusBookingPage() {
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-
           </div>
-
-          {/* ERROR */}
 
           {error && (
             <div className="mt-5 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3">
@@ -227,10 +201,7 @@ export default function BusBookingPage() {
             </div>
           )}
 
-          {/* SEARCH BUTTON */}
-
           <div className="mt-6">
-
             <button
               type="button"
               onClick={searchBuses}
@@ -238,18 +209,12 @@ export default function BusBookingPage() {
             >
               🔍 Search Buses
             </button>
-
           </div>
-
         </div>
-
-        {/* SEARCH RESULT */}
 
         {searched && (
           <div className="mt-8">
-
             <div className="flex items-center justify-between mb-5">
-
               <div>
                 <h3 className="text-2xl font-bold text-gray-900">
                   Available Buses
@@ -263,24 +228,16 @@ export default function BusBookingPage() {
               <span className="text-sm text-gray-500">
                 {buses.length} buses found
               </span>
-
             </div>
 
             <div className="space-y-5">
-
               {buses.map((bus) => (
-
                 <div
                   key={bus.id}
                   className="bg-white rounded-xl shadow p-6 hover:shadow-lg transition"
                 >
-
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-
-                    {/* BUS INFO */}
-
                     <div className="flex-1">
-
                       <h4 className="text-xl font-bold text-gray-900">
                         {bus.operator}
                       </h4>
@@ -290,7 +247,6 @@ export default function BusBookingPage() {
                       </p>
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
-
                         <div>
                           <p className="text-xs text-gray-500">
                             Departure
@@ -330,15 +286,10 @@ export default function BusBookingPage() {
                             {bus.seats}
                           </p>
                         </div>
-
                       </div>
-
                     </div>
 
-                    {/* PRICE + BUTTON */}
-
                     <div className="lg:text-right">
-
                       <p className="text-sm text-gray-500">
                         Starting from
                       </p>
@@ -354,35 +305,23 @@ export default function BusBookingPage() {
                       >
                         Select Bus →
                       </button>
-
                     </div>
-
                   </div>
-
                 </div>
-
               ))}
-
             </div>
-
           </div>
         )}
 
-        {/* BACK */}
-
         <div className="mt-10">
-
           <Link
             href="/travels"
             className="inline-block bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-900"
           >
-            ← travels पर वापस जाएँ
+            ← Travels पर वापस जाएँ
           </Link>
-
         </div>
-
       </div>
-
     </main>
   );
 }
