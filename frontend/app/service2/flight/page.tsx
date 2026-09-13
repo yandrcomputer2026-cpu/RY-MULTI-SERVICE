@@ -904,10 +904,10 @@ export default function FlightPage() {
 
         <div className="mt-10">
           <Link
-            href="/travels"
+            href="/dashboard"
             className="inline-block bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-900"
           >
-            ← Travels पर वापस जाएँ
+            ← Dashboard पर वापस जाएँ
           </Link>
         </div>
 

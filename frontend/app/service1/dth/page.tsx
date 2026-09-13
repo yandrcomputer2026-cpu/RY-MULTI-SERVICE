@@ -25,8 +25,6 @@ export default function DTHPage() {
 
     const numericAmount = Number(amount);
 
-    // ================= CUSTOMER ID VALIDATION =================
-
     if (!cleanCustomerId) {
       setError(
         "कृपया DTH Customer ID / Subscriber Number डालें।"
@@ -41,14 +39,12 @@ export default function DTHPage() {
       return;
     }
 
-    // ================= OPERATOR VALIDATION =================
-
     if (!operator) {
-      setError("कृपया DTH operator select करें।");
+      setError(
+        "कृपया DTH operator select करें।"
+      );
       return;
     }
-
-    // ================= AMOUNT VALIDATION =================
 
     if (
       !Number.isFinite(numericAmount) ||
@@ -70,17 +66,13 @@ export default function DTHPage() {
     setLoading(true);
 
     try {
-      // ================= CREATE TRANSACTION =================
-
       const response = await fetch(
         "/api/recharge/dth",
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             customerId: cleanCustomerId,
             operator,
@@ -101,8 +93,6 @@ export default function DTHPage() {
         return;
       }
 
-      // ================= TRANSACTION ID =================
-
       if (!data.transactionId) {
         setError(
           "Transaction ID नहीं मिली।"
@@ -111,8 +101,6 @@ export default function DTHPage() {
         setLoading(false);
         return;
       }
-
-      // ================= PAYMENT PAGE =================
 
       router.push(
         `/service1/dth/payment?transactionId=${encodeURIComponent(
@@ -138,7 +126,7 @@ export default function DTHPage() {
   return (
     <main className="min-h-screen bg-gray-100">
 
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
 
       <header className="bg-white shadow-sm px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
@@ -150,24 +138,21 @@ export default function DTHPage() {
           <button
             type="button"
             onClick={() =>
-              router.push("/service1")
+              router.push("/dashboard")
             }
             className="text-gray-600 hover:text-blue-600"
           >
-            Service 1
+            Dashboard
           </button>
 
         </div>
       </header>
 
-
-      {/* ================= MAIN ================= */}
+      {/* MAIN */}
 
       <div className="max-w-xl mx-auto px-6 py-10">
 
         <div className="bg-white rounded-xl shadow p-8">
-
-          {/* ================= TITLE ================= */}
 
           <div className="text-center">
 
@@ -185,9 +170,6 @@ export default function DTHPage() {
 
           </div>
 
-
-          {/* ================= ERROR ================= */}
-
           {error && (
             <div className="mt-6 bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
 
@@ -202,15 +184,10 @@ export default function DTHPage() {
             </div>
           )}
 
-
-          {/* ================= FORM ================= */}
-
           <form
             onSubmit={handleContinue}
             className="mt-8 space-y-5"
           >
-
-            {/* ================= CUSTOMER ID ================= */}
 
             <div>
 
@@ -238,9 +215,6 @@ export default function DTHPage() {
               </p>
 
             </div>
-
-
-            {/* ================= OPERATOR ================= */}
 
             <div>
 
@@ -288,9 +262,6 @@ export default function DTHPage() {
 
             </div>
 
-
-            {/* ================= AMOUNT ================= */}
-
             <div>
 
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -311,9 +282,6 @@ export default function DTHPage() {
 
             </div>
 
-
-            {/* ================= SUBMIT ================= */}
-
             <button
               type="submit"
               disabled={loading}
@@ -326,22 +294,18 @@ export default function DTHPage() {
 
           </form>
 
-
-          {/* ================= CANCEL ================= */}
+          {/* BACK TO DASHBOARD */}
 
           <button
             type="button"
             onClick={() =>
-              router.push("/service1")
+              router.push("/dashboard")
             }
             disabled={loading}
-            className="w-full mt-3 bg-gray-200 hover:bg-gray-300 disabled:opacity-50 text-gray-800 font-semibold py-3 rounded-lg"
+            className="w-full mt-3 bg-gray-800 hover:bg-gray-900 disabled:opacity-50 text-white font-semibold py-3 rounded-lg"
           >
-            Cancel
+            ← Dashboard पर वापस जाएँ
           </button>
-
-
-          {/* ================= INFO ================= */}
 
           <p className="text-center text-gray-500 text-sm mt-6">
             Secure payment powered by Razorpay

@@ -72,10 +72,10 @@ export default function AepsWithdrawPage() {
 
           <button
             type="button"
-            onClick={() => router.push("/service2")}
+            onClick={() => router.push("/dashboard")}
             className="text-gray-600 hover:text-blue-600"
           >
-            Service 2
+            Dashboard
           </button>
         </div>
       </header>
@@ -247,10 +247,10 @@ export default function AepsWithdrawPage() {
 
           <button
             type="button"
-            onClick={() => router.push("/service2")}
+            onClick={() => router.push("/dashboard")}
             className="mt-3 w-full rounded-lg bg-gray-200 py-3 font-semibold text-gray-800 hover:bg-gray-300"
           >
-            Cancel
+            ← Dashboard पर वापस जाएँ
           </button>
         </div>
       </div>

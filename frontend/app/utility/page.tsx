@@ -41,6 +41,7 @@ export default async function UtilityPage() {
         </div>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* ELECTRICITY */}
           <Link
             href="/service1/electricity"
             className="block rounded-xl bg-white p-6 shadow transition hover:-translate-y-1 hover:shadow-lg"
@@ -60,6 +61,7 @@ export default async function UtilityPage() {
             </p>
           </Link>
 
+          {/* MOBILE POSTPAID */}
           <Link
             href="/service1/mobile-postpaid"
             className="block rounded-xl bg-white p-6 shadow transition hover:-translate-y-1 hover:shadow-lg"
@@ -79,7 +81,11 @@ export default async function UtilityPage() {
             </p>
           </Link>
 
-          <div className="rounded-xl bg-white p-6 shadow">
+          {/* FASTAG */}
+          <Link
+            href="/service1/fastag"
+            className="block rounded-xl bg-white p-6 shadow transition hover:-translate-y-1 hover:shadow-lg"
+          >
             <div className="text-4xl">🚘</div>
 
             <h3 className="mt-4 text-xl font-bold text-gray-900">
@@ -87,13 +93,13 @@ export default async function UtilityPage() {
             </h3>
 
             <p className="mt-2 text-gray-500">
-              FASTag recharge service जल्द उपलब्ध होगी।
+              Vehicle FASTag recharge service।
             </p>
 
-            <p className="mt-5 font-semibold text-gray-400">
-              Coming Soon
+            <p className="mt-5 font-semibold text-blue-600">
+              Recharge FASTag →
             </p>
-          </div>
+          </Link>
         </div>
 
         <div className="mt-10">

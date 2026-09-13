@@ -206,10 +206,10 @@ export default function TrainPage() {
         {/* BACK */}
         <div className="mx-auto mt-10 max-w-4xl">
           <Link
-            href="/travels"
+            href="/dashboard"
             className="inline-block rounded-lg bg-gray-800 px-6 py-3 font-semibold text-white hover:bg-gray-900"
           >
-            ← Travels पर वापस जाएँ
+            ← Dashboard पर वापस जाएँ
           </Link>
         </div>
 

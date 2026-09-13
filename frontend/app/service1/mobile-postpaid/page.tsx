@@ -39,13 +39,6 @@ export default function MobilePostpaidPage() {
     setLoading(true);
 
     try {
-      /*
-       * IMPORTANT:
-       * यहाँ आपका backend transaction-create API लगाना होगा।
-       *
-       * अभी frontend validation complete है।
-       */
-
       const response = await fetch("/api/recharge/postpaid", {
         method: "POST",
         headers: {
@@ -65,6 +58,7 @@ export default function MobilePostpaidPage() {
           data.message ||
             "Postpaid transaction create नहीं हो पाया।"
         );
+
         setLoading(false);
         return;
       }
@@ -104,10 +98,10 @@ export default function MobilePostpaidPage() {
 
           <button
             type="button"
-            onClick={() => router.push("/service1")}
+            onClick={() => router.push("/dashboard")}
             className="text-gray-600 hover:text-blue-600"
           >
-            Service 1
+            Dashboard
           </button>
         </div>
       </header>
@@ -221,13 +215,14 @@ export default function MobilePostpaidPage() {
             </button>
           </form>
 
+          {/* BACK TO DASHBOARD */}
           <button
             type="button"
-            onClick={() => router.push("/service1")}
+            onClick={() => router.push("/dashboard")}
             disabled={loading}
-            className="w-full mt-3 bg-gray-200 hover:bg-gray-300 disabled:opacity-50 text-gray-800 font-semibold py-3 rounded-lg"
+            className="w-full mt-3 bg-gray-800 hover:bg-gray-900 disabled:opacity-50 text-white font-semibold py-3 rounded-lg"
           >
-            Cancel
+            ← Dashboard पर वापस जाएँ
           </button>
         </div>
       </div>

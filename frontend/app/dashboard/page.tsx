@@ -47,7 +47,7 @@ export default async function DashboardPage() {
 
             {/* Add Money */}
             <Link
-              href="/wallet"
+              href="/wallet/add-money"
               className="rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow hover:bg-emerald-700"
             >
               Add Money
@@ -329,19 +329,22 @@ export default async function DashboardPage() {
       </div>
     </Link>
 
-    {/* FASTag */}
-    <div className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-400">
-      <span>🚗</span>
+{/* FASTag */}
+<Link
+  href="/service1/fastag"
+  className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-amber-50 hover:text-amber-700"
+>
+  <span>🚗</span>
 
-      <div>
-        <p className="font-semibold text-gray-500">
-          FASTag Recharge
-        </p>
-        <p className="text-xs text-orange-500">
-          Coming Soon
-        </p>
-      </div>
-    </div>
+  <div>
+    <p className="font-semibold">
+      FASTag Recharge
+    </p>
+    <p className="text-xs text-gray-400">
+      Vehicle FASTag Recharge
+    </p>
+  </div>
+</Link>
   </div>
 </details>
 
@@ -378,7 +381,7 @@ export default async function DashboardPage() {
 
     {/* Add Money */}
     <Link
-      href="/wallet"
+      href="/wallet/add-money"
       className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-purple-50 hover:text-purple-700"
     >
       <span>➕</span>
@@ -395,7 +398,7 @@ export default async function DashboardPage() {
 
     {/* Bank Settlement */}
     <Link
-      href="/wallet"
+      href="/wallet/bank-settlement"
       className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-purple-50 hover:text-purple-700"
     >
       <span>🏦</span>

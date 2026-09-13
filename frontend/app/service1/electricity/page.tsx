@@ -145,7 +145,7 @@ export default function ElectricityPage() {
             }
             className="text-gray-600 hover:text-blue-600"
           >
-            Service 1
+            Dashboard
           </button>
 
         </div>
@@ -330,12 +330,12 @@ export default function ElectricityPage() {
           <button
             type="button"
             onClick={() =>
-              router.push("/service1")
+              router.push("/dashboard")
             }
             disabled={loading}
             className="w-full mt-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 rounded-lg"
           >
-            Cancel
+            ← Dashboard पर वापस जाएँ
           </button>
 
         </div>
