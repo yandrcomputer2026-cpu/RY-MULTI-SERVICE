@@ -3,134 +3,76 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 
-// ======================================================
-// TYPES
-// ======================================================
-
 type Flight = {
   flightId: string;
-
   airlineCode: string;
   airlineName: string;
-
   flightNumber: string;
-
   from: string;
   fromName: string;
-
   to: string;
   toName: string;
-
   departureTime: string;
   arrivalTime: string;
-
   duration: string;
   stops: number;
-
   cabinClass: string;
-
   refundable: boolean;
-
   price: number;
   currency: string;
-
   seatsAvailable: number;
 };
 
 type SearchResponse = {
   success: boolean;
-
   message?: string;
-
   count?: number;
-
   flights?: Flight[];
 };
 
-// ======================================================
-// HELPERS
-// ======================================================
-
-function formatMoney(
-  value: number
-) {
-  return value.toLocaleString(
-    "en-IN"
-  );
+function formatMoney(value: number) {
+  return value.toLocaleString("en-IN");
 }
 
 function getToday() {
-  const today =
-    new Date();
+  const today = new Date();
 
-  const year =
-    today.getFullYear();
+  const year = today.getFullYear();
 
-  const month =
-    String(
-      today.getMonth() + 1
-    ).padStart(2, "0");
+  const month = String(
+    today.getMonth() + 1
+  ).padStart(2, "0");
 
-  const day =
-    String(
-      today.getDate()
-    ).padStart(2, "0");
+  const day = String(
+    today.getDate()
+  ).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
 
-// ======================================================
-// PAGE
-// ======================================================
-
 export default function FlightPage() {
-  // ====================================================
-  // SEARCH STATE
-  // ====================================================
-
-  const [from, setFrom] =
-    useState("DEL");
-
-  const [to, setTo] =
-    useState("LKO");
+  const [from, setFrom] = useState("DEL");
+  const [to, setTo] = useState("LKO");
 
   const [journeyDate, setJourneyDate] =
-    useState(
-      getToday()
-    );
+    useState(getToday());
 
   const [returnDate, setReturnDate] =
     useState("");
 
-  const [tripType, setTripType] =
-    useState<
-      "ONE_WAY" |
-      "ROUND_TRIP" |
-      "MULTI_CITY"
-    >("ONE_WAY");
+  const [tripType, setTripType] = useState<
+    "ONE_WAY" | "ROUND_TRIP" | "MULTI_CITY"
+  >("ONE_WAY");
 
-  const [adults, setAdults] =
-    useState(1);
-
-  const [children, setChildren] =
-    useState(0);
-
-  const [infants, setInfants] =
-    useState(0);
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+  const [infants, setInfants] = useState(0);
 
   const [cabinClass, setCabinClass] =
-    useState(
-      "ECONOMY"
-    );
-
-  // ====================================================
-  // RESULT STATE
-  // ====================================================
+    useState("ECONOMY");
 
   const [flights, setFlights] =
-    useState<Flight[]>(
-      []
-    );
+    useState<Flight[]>([]);
 
   const [loading, setLoading] =
     useState(false);
@@ -141,18 +83,10 @@ export default function FlightPage() {
   const [error, setError] =
     useState("");
 
-  // ====================================================
-  // SWAP AIRPORTS
-  // ====================================================
-
   function swapAirports() {
     setFrom(to);
     setTo(from);
   }
-
-  // ====================================================
-  // SEARCH
-  // ====================================================
 
   async function handleSearch(
     event: FormEvent
@@ -162,10 +96,6 @@ export default function FlightPage() {
     setError("");
     setFlights([]);
     setSearched(false);
-
-    // ----------------------------------------------
-    // Validation
-    // ----------------------------------------------
 
     if (!from.trim()) {
       setError(
@@ -199,8 +129,7 @@ export default function FlightPage() {
     }
 
     if (
-      tripType ===
-        "ROUND_TRIP" &&
+      tripType === "ROUND_TRIP" &&
       !returnDate
     ) {
       setError(
@@ -212,46 +141,42 @@ export default function FlightPage() {
     try {
       setLoading(true);
 
-      const response =
-        await fetch(
-          "/api/flight/search",
-          {
-            method: "POST",
+      const response = await fetch(
+        "/api/flight/search",
+        {
+          method: "POST",
 
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
 
-            body: JSON.stringify({
-              from:
-                from
-                  .trim()
-                  .toUpperCase(),
+          body: JSON.stringify({
+            from: from
+              .trim()
+              .toUpperCase(),
 
-              to:
-                to
-                  .trim()
-                  .toUpperCase(),
+            to: to
+              .trim()
+              .toUpperCase(),
 
-              journeyDate,
+            journeyDate,
 
-              returnDate:
-                returnDate ||
-                undefined,
+            returnDate:
+              returnDate || undefined,
 
-              tripType,
+            tripType,
 
-              adults,
+            adults,
 
-              children,
+            children,
 
-              infants,
+            infants,
 
-              cabinClass,
-            }),
-          }
-        );
+            cabinClass,
+          }),
+        }
+      );
 
       const data: SearchResponse =
         await response.json();
@@ -269,12 +194,12 @@ export default function FlightPage() {
           data.message ||
             "Flight search नहीं हो सकी।"
         );
+
         return;
       }
 
       setFlights(
-        data.flights ||
-          []
+        data.flights || []
       );
 
       setSearched(true);
@@ -292,19 +217,12 @@ export default function FlightPage() {
     }
   }
 
-  // ====================================================
-  // PAGE
-  // ====================================================
-
   return (
     <main className="min-h-screen bg-gray-100">
 
-      {/* ==================================================
-          HEADER
-          ================================================== */}
+      {/* HEADER */}
 
       <header className="bg-white shadow-sm px-6 py-4">
-
         <div className="max-w-6xl mx-auto flex items-center justify-between">
 
           <Link
@@ -324,27 +242,21 @@ export default function FlightPage() {
             </Link>
 
             <Link
-              href="/Travels"
+              href="/travels"
               className="text-gray-600 hover:text-blue-600"
             >
               Travels
             </Link>
 
           </div>
-
         </div>
-
       </header>
 
-      {/* ==================================================
-          MAIN
-          ================================================== */}
+      {/* MAIN */}
 
       <div className="max-w-6xl mx-auto px-6 py-10">
 
-        {/* ==================================================
-            TITLE
-            ================================================== */}
+        {/* TITLE */}
 
         <div className="mb-8">
 
@@ -358,14 +270,10 @@ export default function FlightPage() {
 
         </div>
 
-        {/* ==================================================
-            SEARCH BOX
-            ================================================== */}
+        {/* SEARCH BOX */}
 
         <form
-          onSubmit={
-            handleSearch
-          }
+          onSubmit={handleSearch}
           className="bg-white rounded-xl shadow p-6"
         >
 
@@ -376,13 +284,10 @@ export default function FlightPage() {
             <button
               type="button"
               onClick={() =>
-                setTripType(
-                  "ONE_WAY"
-                )
+                setTripType("ONE_WAY")
               }
               className={`px-5 py-2.5 rounded-lg font-semibold ${
-                tripType ===
-                "ONE_WAY"
+                tripType === "ONE_WAY"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700"
               }`}
@@ -393,13 +298,10 @@ export default function FlightPage() {
             <button
               type="button"
               onClick={() =>
-                setTripType(
-                  "ROUND_TRIP"
-                )
+                setTripType("ROUND_TRIP")
               }
               className={`px-5 py-2.5 rounded-lg font-semibold ${
-                tripType ===
-                "ROUND_TRIP"
+                tripType === "ROUND_TRIP"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700"
               }`}
@@ -410,13 +312,10 @@ export default function FlightPage() {
             <button
               type="button"
               onClick={() =>
-                setTripType(
-                  "MULTI_CITY"
-                )
+                setTripType("MULTI_CITY")
               }
               className={`px-5 py-2.5 rounded-lg font-semibold ${
-                tripType ===
-                "MULTI_CITY"
+                tripType === "MULTI_CITY"
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700"
               }`}
@@ -430,10 +329,7 @@ export default function FlightPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-end">
 
-            {/* FROM */}
-
             <div>
-
               <label
                 htmlFor="from"
                 className="block text-sm font-semibold text-gray-700 mb-2"
@@ -445,12 +341,9 @@ export default function FlightPage() {
                 id="from"
                 type="text"
                 value={from}
-                onChange={(
-                  event
-                ) =>
+                onChange={(event) =>
                   setFrom(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="DEL"
@@ -460,26 +353,18 @@ export default function FlightPage() {
               <p className="text-xs text-gray-500 mt-1">
                 Example: DEL, LKO, BOM
               </p>
-
             </div>
-
-            {/* SWAP */}
 
             <button
               type="button"
-              onClick={
-                swapAirports
-              }
+              onClick={swapAirports}
               className="h-12 w-12 bg-gray-100 hover:bg-gray-200 rounded-full font-bold text-xl"
               title="Swap"
             >
               ⇄
             </button>
 
-            {/* TO */}
-
             <div>
-
               <label
                 htmlFor="to"
                 className="block text-sm font-semibold text-gray-700 mb-2"
@@ -491,12 +376,9 @@ export default function FlightPage() {
                 id="to"
                 type="text"
                 value={to}
-                onChange={(
-                  event
-                ) =>
+                onChange={(event) =>
                   setTo(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="LKO"
@@ -506,7 +388,6 @@ export default function FlightPage() {
               <p className="text-xs text-gray-500 mt-1">
                 Example: DEL, LKO, BOM
               </p>
-
             </div>
 
           </div>
@@ -515,10 +396,7 @@ export default function FlightPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
 
-            {/* JOURNEY DATE */}
-
             <div>
-
               <label
                 htmlFor="journeyDate"
                 className="block text-sm font-semibold text-gray-700 mb-2"
@@ -530,26 +408,17 @@ export default function FlightPage() {
                 id="journeyDate"
                 type="date"
                 min={getToday()}
-                value={
-                  journeyDate
-                }
-                onChange={(
-                  event
-                ) =>
+                value={journeyDate}
+                onChange={(event) =>
                   setJourneyDate(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
               />
-
             </div>
 
-            {/* RETURN DATE */}
-
             <div>
-
               <label
                 htmlFor="returnDate"
                 className="block text-sm font-semibold text-gray-700 mb-2"
@@ -568,26 +437,17 @@ export default function FlightPage() {
                   tripType !==
                   "ROUND_TRIP"
                 }
-                value={
-                  returnDate
-                }
-                onChange={(
-                  event
-                ) =>
+                value={returnDate}
+                onChange={(event) =>
                   setReturnDate(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
               />
-
             </div>
 
-            {/* ADULTS */}
-
             <div>
-
               <label
                 htmlFor="adults"
                 className="block text-sm font-semibold text-gray-700 mb-2"
@@ -598,48 +458,30 @@ export default function FlightPage() {
               <select
                 id="adults"
                 value={adults}
-                onChange={(
-                  event
-                ) =>
+                onChange={(event) =>
                   setAdults(
                     Number(
-                      event.target
-                        .value
+                      event.target.value
                     )
                   )
                 }
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-blue-500"
               >
-
                 {Array.from(
-                  {
-                    length: 9,
-                  },
-                  (
-                    _,
-                    index
-                  ) => (
+                  { length: 9 },
+                  (_, index) => (
                     <option
-                      key={
-                        index + 1
-                      }
-                      value={
-                        index + 1
-                      }
+                      key={index + 1}
+                      value={index + 1}
                     >
                       {index + 1}
                     </option>
                   )
                 )}
-
               </select>
-
             </div>
 
-            {/* CABIN */}
-
             <div>
-
               <label
                 htmlFor="cabin"
                 className="block text-sm font-semibold text-gray-700 mb-2"
@@ -649,20 +491,14 @@ export default function FlightPage() {
 
               <select
                 id="cabin"
-                value={
-                  cabinClass
-                }
-                onChange={(
-                  event
-                ) =>
+                value={cabinClass}
+                onChange={(event) =>
                   setCabinClass(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-blue-500"
               >
-
                 <option value="ECONOMY">
                   Economy
                 </option>
@@ -678,9 +514,7 @@ export default function FlightPage() {
                 <option value="FIRST">
                   First Class
                 </option>
-
               </select>
-
             </div>
 
           </div>
@@ -690,7 +524,6 @@ export default function FlightPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 md:w-1/2">
 
             <div>
-
               <label
                 htmlFor="children"
                 className="block text-sm font-semibold text-gray-700 mb-2"
@@ -700,49 +533,31 @@ export default function FlightPage() {
 
               <select
                 id="children"
-                value={
-                  children
-                }
-                onChange={(
-                  event
-                ) =>
+                value={children}
+                onChange={(event) =>
                   setChildren(
                     Number(
-                      event.target
-                        .value
+                      event.target.value
                     )
                   )
                 }
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-blue-500"
               >
-
                 {Array.from(
-                  {
-                    length: 9,
-                  },
-                  (
-                    _,
-                    index
-                  ) => (
+                  { length: 9 },
+                  (_, index) => (
                     <option
-                      key={
-                        index
-                      }
-                      value={
-                        index
-                      }
+                      key={index}
+                      value={index}
                     >
                       {index}
                     </option>
                   )
                 )}
-
               </select>
-
             </div>
 
             <div>
-
               <label
                 htmlFor="infants"
                 className="block text-sm font-semibold text-gray-700 mb-2"
@@ -752,45 +567,28 @@ export default function FlightPage() {
 
               <select
                 id="infants"
-                value={
-                  infants
-                }
-                onChange={(
-                  event
-                ) =>
+                value={infants}
+                onChange={(event) =>
                   setInfants(
                     Number(
-                      event.target
-                        .value
+                      event.target.value
                     )
                   )
                 }
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:ring-2 focus:ring-blue-500"
               >
-
                 {Array.from(
-                  {
-                    length: 5,
-                  },
-                  (
-                    _,
-                    index
-                  ) => (
+                  { length: 5 },
+                  (_, index) => (
                     <option
-                      key={
-                        index
-                      }
-                      value={
-                        index
-                      }
+                      key={index}
+                      value={index}
                     >
                       {index}
                     </option>
                   )
                 )}
-
               </select>
-
             </div>
 
           </div>
@@ -807,9 +605,7 @@ export default function FlightPage() {
 
           <button
             type="submit"
-            disabled={
-              loading
-            }
+            disabled={loading}
             className="w-full md:w-auto mt-6 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg font-bold"
           >
             {loading
@@ -819,15 +615,12 @@ export default function FlightPage() {
 
         </form>
 
-        {/* ==================================================
-            RESULTS
-            ================================================== */}
+        {/* RESULTS */}
 
         <div className="mt-10">
 
           {loading && (
             <div className="bg-white rounded-xl shadow p-10 text-center">
-
               <div className="text-4xl">
                 ✈️
               </div>
@@ -835,14 +628,12 @@ export default function FlightPage() {
               <p className="text-gray-600 mt-4">
                 Flights search हो रही हैं...
               </p>
-
             </div>
           )}
 
           {!loading &&
             searched &&
-            flights.length ===
-              0 && (
+            flights.length === 0 && (
               <div className="bg-white rounded-xl shadow p-10 text-center">
 
                 <div className="text-5xl">
@@ -861,16 +652,12 @@ export default function FlightPage() {
             )}
 
           {!loading &&
-            flights.length >
-              0 && (
+            flights.length > 0 && (
               <>
-
-                {/* RESULT HEADER */}
 
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
 
                   <div>
-
                     <h2 className="text-2xl font-bold text-gray-900">
                       Available Flights
                     </h2>
@@ -883,273 +670,245 @@ export default function FlightPage() {
                       {flights.length}
                       {" flights found"}
                     </p>
-
                   </div>
 
                 </div>
 
-                {/* FLIGHTS */}
-
                 <div className="space-y-5">
 
-                  {flights.map(
-                    (
-                      flight
-                    ) => (
-                      <div
-                        key={
-                          flight.flightId
-                        }
-                        className="bg-white rounded-xl shadow p-6 hover:shadow-lg transition"
-                      >
+                  {flights.map((flight) => (
+                    <div
+                      key={flight.flightId}
+                      className="bg-white rounded-xl shadow p-6 hover:shadow-lg transition"
+                    >
 
-                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
 
-                          {/* AIRLINE */}
+                        <div className="min-w-[180px]">
 
-                          <div className="min-w-[180px]">
+                          <h3 className="text-lg font-bold text-gray-900">
+                            {flight.airlineName}
+                          </h3>
 
-                            <h3 className="text-lg font-bold text-gray-900">
-                              {
-                                flight.airlineName
-                              }
-                            </h3>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {flight.airlineCode}
+                            {" • "}
+                            {flight.flightNumber}
+                          </p>
 
-                            <p className="text-sm text-gray-500 mt-1">
-                              {
-                                flight.airlineCode
-                              }
-                              {" • "}
-                              {
-                                flight.flightNumber
-                              }
-                            </p>
+                        </div>
 
-                          </div>
+                        <div className="flex-1">
 
-                          {/* TIME */}
+                          <div className="flex items-center justify-between gap-5">
 
-                          <div className="flex-1">
+                            <div>
+                              <p className="text-2xl font-bold text-gray-900">
+                                {flight.departureTime}
+                              </p>
 
-                            <div className="flex items-center justify-between gap-5">
+                              <p className="text-sm text-gray-500">
+                                {flight.from}
+                                {" • "}
+                                {flight.fromName}
+                              </p>
+                            </div>
 
-                              <div>
+                            <div className="flex-1 text-center">
 
-                                <p className="text-2xl font-bold text-gray-900">
-                                  {
-                                    flight.departureTime
-                                  }
-                                </p>
+                              <p className="text-xs text-gray-500">
+                                {flight.duration}
+                              </p>
 
-                                <p className="text-sm text-gray-500">
-                                  {flight.from}
-                                  {" • "}
-                                  {
-                                    flight.fromName
-                                  }
-                                </p>
+                              <div className="flex items-center gap-2 mt-2">
+
+                                <div className="h-px bg-gray-300 flex-1" />
+
+                                <span className="text-blue-600">
+                                  ✈
+                                </span>
+
+                                <div className="h-px bg-gray-300 flex-1" />
 
                               </div>
 
-                              <div className="flex-1 text-center">
+                              <p className="text-xs text-gray-500 mt-1">
+                                {flight.stops === 0
+                                  ? "Non-stop"
+                                  : `${flight.stops} stop`}
+                              </p>
 
-                                <p className="text-xs text-gray-500">
-                                  {
-                                    flight.duration
-                                  }
-                                </p>
+                            </div>
 
-                                <div className="flex items-center gap-2 mt-2">
+                            <div className="text-right">
 
-                                  <div className="h-px bg-gray-300 flex-1" />
+                              <p className="text-2xl font-bold text-gray-900">
+                                {flight.arrivalTime}
+                              </p>
 
-                                  <span className="text-blue-600">
-                                    ✈
-                                  </span>
-
-                                  <div className="h-px bg-gray-300 flex-1" />
-
-                                </div>
-
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {flight.stops ===
-                                  0
-                                    ? "Non-stop"
-                                    : `${flight.stops} stop`}
-                                </p>
-
-                              </div>
-
-                              <div className="text-right">
-
-                                <p className="text-2xl font-bold text-gray-900">
-                                  {
-                                    flight.arrivalTime
-                                  }
-                                </p>
-
-                                <p className="text-sm text-gray-500">
-                                  {flight.to}
-                                  {" • "}
-                                  {
-                                    flight.toName
-                                  }
-                                </p>
-
-                              </div>
+                              <p className="text-sm text-gray-500">
+                                {flight.to}
+                                {" • "}
+                                {flight.toName}
+                              </p>
 
                             </div>
 
                           </div>
 
-                          {/* PRICE */}
-
-                          <div className="lg:text-right min-w-[150px]">
-
-                            <p className="text-sm text-gray-500">
-                              Starting from
-                            </p>
-
-                            <p className="text-2xl font-bold text-gray-900">
-                              ₹
-                              {formatMoney(
-                                flight.price
-                              )}
-                            </p>
-
-                            <p className="text-xs text-gray-500 mt-1">
-                              per passenger
-                            </p>
-
-                            <button
-                              type="button"
-                              className="w-full lg:w-auto mt-3 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold"
-onClick={() => {
-  const params =
-    new URLSearchParams({
-      flightId:
-        flight.flightId,
-
-      airlineCode:
-        flight.airlineCode,
-
-      airlineName:
-        flight.airlineName,
-
-      flightNumber:
-        flight.flightNumber,
-
-      from:
-        flight.from,
-
-      fromName:
-        flight.fromName,
-
-      to:
-        flight.to,
-
-      toName:
-        flight.toName,
-
-      departureTime:
-        flight.departureTime,
-
-      arrivalTime:
-        flight.arrivalTime,
-
-      duration:
-        flight.duration,
-
-      stops:
-        String(
-          flight.stops
-        ),
-
-      cabinClass:
-        flight.cabinClass,
-
-      refundable:
-        String(
-          flight.refundable
-        ),
-
-      price:
-        String(
-          flight.price
-        ),
-
-      currency:
-        flight.currency,
-
-      seatsAvailable:
-        String(
-          flight.seatsAvailable
-        ),
-
-      journeyDate,
-
-      adults:
-        String(adults),
-
-      children:
-        String(children),
-
-      infants:
-        String(infants),
-    });
-
-  window.location.href =
-    `/service2/flight/details?${params.toString()}`;
-}}                            >
-                              Select Flight →
-                            </button>
-
-                          </div>
-
                         </div>
 
-                        {/* META */}
+                        <div className="lg:text-right min-w-[150px]">
 
-                        <div className="border-t mt-5 pt-4 flex flex-wrap gap-4 text-sm">
+                          <p className="text-sm text-gray-500">
+                            Starting from
+                          </p>
 
-                          <span className="text-gray-600">
-                            💺{" "}
-                            {
-                              flight.seatsAvailable
-                            }{" "}
-                            seats left
-                          </span>
+                          <p className="text-2xl font-bold text-gray-900">
+                            ₹
+                            {formatMoney(
+                              flight.price
+                            )}
+                          </p>
 
-                          <span
-                            className={
-                              flight.refundable
-                                ? "text-green-600 font-semibold"
-                                : "text-red-600 font-semibold"
-                            }
+                          <p className="text-xs text-gray-500 mt-1">
+                            per passenger
+                          </p>
+
+                          <button
+                            type="button"
+                            className="w-full lg:w-auto mt-3 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold"
+                            onClick={() => {
+                              const params =
+                                new URLSearchParams({
+                                  flightId:
+                                    flight.flightId,
+
+                                  airlineCode:
+                                    flight.airlineCode,
+
+                                  airlineName:
+                                    flight.airlineName,
+
+                                  flightNumber:
+                                    flight.flightNumber,
+
+                                  from:
+                                    flight.from,
+
+                                  fromName:
+                                    flight.fromName,
+
+                                  to:
+                                    flight.to,
+
+                                  toName:
+                                    flight.toName,
+
+                                  departureTime:
+                                    flight.departureTime,
+
+                                  arrivalTime:
+                                    flight.arrivalTime,
+
+                                  duration:
+                                    flight.duration,
+
+                                  stops:
+                                    String(
+                                      flight.stops
+                                    ),
+
+                                  cabinClass:
+                                    flight.cabinClass,
+
+                                  refundable:
+                                    String(
+                                      flight.refundable
+                                    ),
+
+                                  price:
+                                    String(
+                                      flight.price
+                                    ),
+
+                                  currency:
+                                    flight.currency,
+
+                                  seatsAvailable:
+                                    String(
+                                      flight.seatsAvailable
+                                    ),
+
+                                  journeyDate,
+
+                                  adults:
+                                    String(adults),
+
+                                  children:
+                                    String(children),
+
+                                  infants:
+                                    String(infants),
+                                });
+
+                              window.location.href =
+                                `/service2/flight/details?${params.toString()}`;
+                            }}
                           >
-                            {flight.refundable
-                              ? "✓ Refundable"
-                              : "✕ Non-refundable"}
-                          </span>
-
-                          <span className="text-gray-600">
-                            🧳 Cabin:{" "}
-                            {
-                              flight.cabinClass
-                            }
-                          </span>
+                            Select Flight →
+                          </button>
 
                         </div>
 
                       </div>
-                    )
-                  )}
+
+                      <div className="border-t mt-5 pt-4 flex flex-wrap gap-4 text-sm">
+
+                        <span className="text-gray-600">
+                          💺{" "}
+                          {flight.seatsAvailable}{" "}
+                          seats left
+                        </span>
+
+                        <span
+                          className={
+                            flight.refundable
+                              ? "text-green-600 font-semibold"
+                              : "text-red-600 font-semibold"
+                          }
+                        >
+                          {flight.refundable
+                            ? "✓ Refundable"
+                            : "✕ Non-refundable"}
+                        </span>
+
+                        <span className="text-gray-600">
+                          🧳 Cabin:{" "}
+                          {flight.cabinClass}
+                        </span>
+
+                      </div>
+
+                    </div>
+                  ))}
 
                 </div>
 
               </>
             )}
 
+        </div>
+
+        {/* BACK TO TRAVELS */}
+
+        <div className="mt-10">
+          <Link
+            href="/travels"
+            className="inline-block bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-900"
+          >
+            ← Travels पर वापस जाएँ
+          </Link>
         </div>
 
       </div>
