@@ -30,12 +30,14 @@ model transaction {
   @@index([userId], map: "Transaction_userId_idx")
   @@map("Transaction")
 }
+
 enum UserRole {
   RETAILER
   DISTRIBUTOR
   MASTER_DISTRIBUTOR
   ADMIN
-} 
+}
+
 model user {
   id        Int      @id @default(autoincrement())
   name      String
@@ -45,5 +47,93 @@ model user {
   updatedAt DateTime @updatedAt
   mobile    String   @unique(map: "User_mobile_key")
   role      UserRole @default(RETAILER)
+
+  wallet             wallet?
+  walletTransactions walletTransaction[]
+
   @@map("User")
+}
+
+enum WalletStatus {
+  ACTIVE
+  BLOCKED
+  SUSPENDED
+}
+
+enum WalletTransactionType {
+  CREDIT
+  DEBIT
+  HOLD
+  RELEASE
+  REFUND
+  ADJUSTMENT
+}
+
+enum WalletTransactionSource {
+  ADD_MONEY
+  SERVICE_PAYMENT
+  REFUND
+  BANK_SETTLEMENT
+  ADMIN_ADJUSTMENT
+}
+
+model wallet {
+  id Int @id @default(autoincrement())
+
+  userId Int @unique(map: "Wallet_userId_key")
+
+  availableBalance Decimal @default(0) @db.Decimal(12, 2)
+  lockedBalance    Decimal @default(0) @db.Decimal(12, 2)
+
+  status WalletStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         user                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions walletTransaction[]
+
+  @@index([status], map: "Wallet_status_idx")
+  @@map("Wallet")
+}
+
+model walletTransaction {
+  id Int @id @default(autoincrement())
+
+  transactionId String @unique(map: "WalletTransaction_transactionId_key")
+
+  walletId Int
+  userId   Int
+
+  type   WalletTransactionType
+  source WalletTransactionSource
+
+  amount Decimal @db.Decimal(12, 2)
+
+  balanceBefore Decimal @db.Decimal(12, 2)
+  balanceAfter  Decimal @db.Decimal(12, 2)
+
+  status String @default("PENDING")
+
+  referenceId String?
+  description String? @db.Text
+
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  razorpaySignature String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  wallet wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  user   user   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([walletId], map: "WalletTransaction_walletId_idx")
+  @@index([userId], map: "WalletTransaction_userId_idx")
+  @@index([type], map: "WalletTransaction_type_idx")
+  @@index([source], map: "WalletTransaction_source_idx")
+  @@index([status], map: "WalletTransaction_status_idx")
+  @@index([createdAt], map: "WalletTransaction_createdAt_idx")
+
+  @@map("WalletTransaction")
 }
