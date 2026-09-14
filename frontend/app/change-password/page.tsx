@@ -177,10 +177,10 @@ export default function ChangePasswordPage() {
 
           <div className="mt-6 text-center">
             <Link
-              href="/account"
+              href="/dashboard"
               className="text-sm font-semibold text-gray-600 hover:text-blue-600"
             >
-              ← Back to Account Details
+              ← Back to Dashboard
             </Link>
           </div>
         </div>

@@ -7,85 +7,74 @@ export default function AepsWithdrawPage() {
   const router = useRouter();
 
   const [bank, setBank] = useState("");
-  const [aadhaar, setAadhaar] = useState("");
   const [mobile, setMobile] = useState("");
   const [amount, setAmount] = useState("");
   const [consent, setConsent] = useState(false);
-  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("");
+    setMessage("");
 
-    const cleanAadhaar = aadhaar.replace(/\D/g, "");
     const cleanMobile = mobile.replace(/\D/g, "");
     const cleanAmount = Number(amount);
 
     if (!bank) {
-      setError("कृपया Bank चुनें।");
-      return;
-    }
-
-    if (!/^\d{12}$/.test(cleanAadhaar)) {
-      setError("कृपया 12 अंकों का सही Aadhaar Number डालें।");
+      setMessage("कृपया Bank चुनें।");
       return;
     }
 
     if (!/^[6-9]\d{9}$/.test(cleanMobile)) {
-      setError("कृपया सही 10 अंकों का Mobile Number डालें।");
+      setMessage("कृपया सही 10 अंकों का Mobile Number डालें।");
       return;
     }
 
     if (!Number.isFinite(cleanAmount) || cleanAmount <= 0) {
-      setError("कृपया सही Withdrawal Amount डालें।");
+      setMessage("कृपया सही Withdrawal Amount डालें।");
       return;
     }
 
     if (!consent) {
-      setError("AEPS transaction के लिए consent देना जरूरी है।");
+      setMessage("AEPS service के लिए consent देना जरूरी है।");
       return;
     }
 
-    /*
-      IMPORTANT:
-      अभी यहाँ कोई AEPS API call नहीं होगी।
-
-      अगले चरण में authorized AEPS provider मिलने के बाद
-      backend endpoint बनाया जाएगा।
-
-      Aadhaar Number को URL/query string में कभी नहीं भेजना है।
-    */
-
-    setError(
-      "AEPS provider अभी configure नहीं है। Form validation successful है।"
+    setMessage(
+      "AEPS provider अभी configure नहीं है। Details validation successful है, लेकिन कोई transaction process नहीं किया गया।"
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-100">
-      {/* HEADER */}
-      <header className="bg-white px-6 py-4 shadow-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <h1 className="text-xl font-bold text-blue-700">
-            RY MULTI SERVICE
-          </h1>
+    <main className="min-h-screen bg-slate-50">
+      {/* ================= HEADER ================= */}
+      <header className="border-b bg-white shadow-sm">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+          <div>
+            <h1 className="text-xl font-extrabold text-blue-700">
+              RY MULTI SERVICE
+            </h1>
+
+            <p className="text-xs font-medium text-gray-400">
+              AEPS Banking
+            </p>
+          </div>
 
           <button
             type="button"
-            onClick={() => router.push("/dashboard")}
-            className="text-gray-600 hover:text-blue-600"
+            onClick={() => router.push("/banking")}
+            className="rounded-lg border px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
           >
-            Dashboard
+            ← Banking
           </button>
         </div>
       </header>
 
       <div className="mx-auto max-w-xl px-6 py-12">
-        <div className="rounded-2xl bg-white p-8 shadow">
+        <div className="rounded-2xl border bg-white p-8 shadow-sm">
           <div className="text-center">
             <div className="text-5xl">💵</div>
 
-            <h2 className="mt-4 text-3xl font-bold text-gray-900">
+            <h2 className="mt-4 text-3xl font-extrabold text-gray-900">
               AEPS Cash Withdrawal
             </h2>
 
@@ -94,25 +83,39 @@ export default function AepsWithdrawPage() {
             </p>
           </div>
 
-          <div className="mt-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-            <p className="font-semibold text-yellow-800">
-              AEPS Provider Required
+          {/* ================= SETUP NOTICE ================= */}
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <p className="font-bold text-amber-900">
+              AEPS Provider Setup Required
             </p>
 
-            <p className="mt-1 text-sm text-yellow-700">
-              अभी यह page setup mode में है। Actual withdrawal authorized
-              AEPS provider integration के बाद enable होगा।
+            <p className="mt-2 text-sm leading-6 text-amber-800">
+              अभी यह service setup mode में है। Authorized AEPS provider,
+              biometric device और secure authentication flow connect होने के
+              बाद ही real withdrawal enable होगा।
             </p>
           </div>
 
-          {error && (
-            <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-700">
-              {error}
+          {/* ================= PRIVACY NOTICE ================= */}
+          <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <p className="font-bold text-blue-900">
+              Aadhaar Data अभी Collect नहीं किया जा रहा
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-blue-800">
+              Provider integration complete होने तक इस page पर Aadhaar Number,
+              fingerprint या biometric data collect या store नहीं किया जाएगा।
+            </p>
+          </div>
+
+          {message && (
+            <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm font-medium text-blue-800">
+              {message}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="mt-8">
-            {/* BANK */}
+            {/* ================= BANK ================= */}
             <div>
               <label
                 htmlFor="bank"
@@ -125,7 +128,7 @@ export default function AepsWithdrawPage() {
                 id="bank"
                 value={bank}
                 onChange={(event) => setBank(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Bank चुनें</option>
                 <option value="sbi">State Bank of India</option>
@@ -139,49 +142,20 @@ export default function AepsWithdrawPage() {
               </select>
             </div>
 
-            {/* AADHAAR */}
-            <div className="mt-6">
-              <label
-                htmlFor="aadhaar"
-                className="mb-2 block text-sm font-semibold text-gray-700"
-              >
-                Aadhaar Number
-              </label>
-
-              <input
-                id="aadhaar"
-                type="password"
-                inputMode="numeric"
-                autoComplete="off"
-                value={aadhaar}
-                onChange={(event) =>
-                  setAadhaar(
-                    event.target.value.replace(/\D/g, "").slice(0, 12)
-                  )
-                }
-                placeholder="12 digit Aadhaar Number"
-                maxLength={12}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-
-              <p className="mt-2 text-xs text-gray-500">
-                सुरक्षा के लिए Aadhaar Number masked रखा गया है।
-              </p>
-            </div>
-
-            {/* MOBILE */}
+            {/* ================= MOBILE ================= */}
             <div className="mt-6">
               <label
                 htmlFor="mobile"
                 className="mb-2 block text-sm font-semibold text-gray-700"
               >
-                Mobile Number
+                Customer Mobile Number
               </label>
 
               <input
                 id="mobile"
                 type="tel"
                 inputMode="numeric"
+                autoComplete="tel"
                 value={mobile}
                 onChange={(event) =>
                   setMobile(
@@ -190,11 +164,11 @@ export default function AepsWithdrawPage() {
                 }
                 placeholder="10 digit Mobile Number"
                 maxLength={10}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            {/* AMOUNT */}
+            {/* ================= AMOUNT ================= */}
             <div className="mt-6">
               <label
                 htmlFor="amount"
@@ -216,13 +190,13 @@ export default function AepsWithdrawPage() {
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
                   placeholder="0"
-                  className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
 
-            {/* CONSENT */}
-            <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-lg bg-gray-50 p-4">
+            {/* ================= CONSENT ================= */}
+            <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl bg-gray-50 p-4">
               <input
                 type="checkbox"
                 checked={consent}
@@ -230,27 +204,27 @@ export default function AepsWithdrawPage() {
                 className="mt-1 h-4 w-4"
               />
 
-              <span className="text-sm text-gray-600">
-                मैं इस AEPS transaction के लिए अपनी सहमति देता/देती हूँ और
-                समझता/समझती हूँ कि actual transaction के लिए biometric
-                authentication आवश्यक हो सकती है।
+              <span className="text-sm leading-6 text-gray-600">
+                मैं समझता/समझती हूँ कि AEPS transaction केवल authorized
+                provider और required biometric authentication के बाद ही
+                process किया जा सकता है।
               </span>
             </label>
 
             <button
               type="submit"
-              className="mt-8 w-full rounded-lg bg-green-600 py-4 font-bold text-white hover:bg-green-700"
+              className="mt-8 w-full rounded-lg bg-emerald-600 py-4 font-bold text-white transition hover:bg-emerald-700"
             >
-              Continue to AEPS →
+              Check Setup →
             </button>
           </form>
 
           <button
             type="button"
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/banking")}
             className="mt-3 w-full rounded-lg bg-gray-200 py-3 font-semibold text-gray-800 hover:bg-gray-300"
           >
-            ← Dashboard पर वापस जाएँ
+            ← Banking Services
           </button>
         </div>
       </div>

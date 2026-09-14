@@ -468,20 +468,6 @@ export default async function DashboardPage() {
                 </div>
               </Link>
 
-              {/* My History */}
-              <Link
-                href="/history"
-                className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
-              >
-                <span>📋</span>
-
-                <div>
-                  <p className="font-semibold">My History</p>
-                  <p className="text-xs text-gray-400">
-                    Transaction History
-                  </p>
-                </div>
-              </Link>
             </div>
           </details>
 
