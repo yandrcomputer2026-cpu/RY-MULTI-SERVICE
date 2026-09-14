@@ -63,7 +63,20 @@ export async function POST(request: Request) {
         { status: 401 }
       );
     }
+// New password must be different from current password
+const samePassword = await bcrypt.compare(
+  newPassword,
+  dbUser.password
+);
 
+if (samePassword) {
+  return NextResponse.json(
+    {
+      message: "New Password, Current Password से अलग होना चाहिए।",
+    },
+    { status: 400 }
+  );
+}
     // New password hash
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
