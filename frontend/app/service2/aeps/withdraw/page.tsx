@@ -221,10 +221,10 @@ export default function AepsWithdrawPage() {
 
           <button
             type="button"
-            onClick={() => router.push("/banking")}
+            onClick={() => router.push("/dashboard")}
             className="mt-3 w-full rounded-lg bg-gray-200 py-3 font-semibold text-gray-800 hover:bg-gray-300"
           >
-            ← Banking Services
+            ← Dashboard
           </button>
         </div>
       </div>
