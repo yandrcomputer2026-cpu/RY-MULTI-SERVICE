@@ -48,10 +48,10 @@ export default function UpiCashPage() {
 
           <button
             type="button"
-            onClick={() => router.push("/banking")}
+            onClick={() => router.push("/dashboard")}
             className="rounded-lg border px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
           >
-            ← Banking
+            ← Dashboard
           </button>
         </div>
       </header>
