@@ -112,7 +112,7 @@ export default async function DashboardPage() {
           Mobile Prepaid
         </p>
         <p className="text-xs text-gray-400">
-          Mobile Recharge
+          Test / Provider Pending
         </p>
       </div>
     </Link>
@@ -128,7 +128,7 @@ export default async function DashboardPage() {
           DTH Recharge
         </p>
         <p className="text-xs text-gray-400">
-          DTH Customer Recharge
+          Test / Provider Pending
         </p>
       </div>
     </Link>
@@ -187,32 +187,48 @@ export default async function DashboardPage() {
           Mini Statement
         </Link>
 
-        <Link
-          href="/service2/aeps/deposit"
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
-        >
-          <span>💰</span>
-          Cash Deposit
-        </Link>
       </div>
     </details>
 
-    {/* Money Transfer */}
-    <Link
-      href="/service2/money-transfer"
-      className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
-    >
+{/* Money Transfer / Cash Deposit */}
+<details className="group/transfer mt-1">
+  <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2.5 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700">
+    <div className="flex items-center gap-3">
       <span>💸</span>
 
       <div>
         <p className="font-semibold">
-          Money Transfer
+          Money Transfer / Cash Deposit
         </p>
-        <p className="text-xs text-gray-400">
-          Bank Transfer
+        <p className="text-xs text-amber-500">
+          Provider Setup
         </p>
       </div>
+    </div>
+
+    <span className="transition-transform duration-200 group-open/transfer:rotate-90">
+      ›
+    </span>
+  </summary>
+
+  <div className="ml-5 mt-1 space-y-1 border-l border-gray-200 pl-3">
+    <Link
+      href="/service2/money-transfer"
+      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
+    >
+      <span>💸</span>
+      Money Transfer
     </Link>
+
+    <Link
+      href="/service2/aeps/deposit"
+      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 transition hover:bg-green-50 hover:text-green-700"
+    >
+      <span>💰</span>
+      Cash Deposit
+    </Link>
+  </div>
+</details>
 
     {/* UPI Cash */}
     <Link
@@ -341,7 +357,7 @@ export default async function DashboardPage() {
       FASTag Recharge
     </p>
     <p className="text-xs text-gray-400">
-      Vehicle FASTag Recharge
+      Provider Setup Required
     </p>
   </div>
 </Link>
