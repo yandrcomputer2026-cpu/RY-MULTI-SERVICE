@@ -48,7 +48,7 @@ export default async function BankingPage() {
           </h2>
 
           <p className="mt-3 max-w-2xl text-sm text-green-50">
-            AEPS, Money Transfer और UPI Cash services के लिए
+            AEPS, Money Transfer, Cash Deposit और UPI Cash services के लिए
             provider-ready banking section।
           </p>
         </div>
@@ -64,9 +64,10 @@ export default async function BankingPage() {
               </h3>
 
               <p className="mt-1 text-sm leading-6 text-amber-800">
-                AEPS, Money Transfer और UPI Cash के लिए authorized banking
-                provider API integration आवश्यक है। Provider activation होने
-                तक कोई real banking transaction process नहीं किया जाएगा।
+                AEPS, Money Transfer, Cash Deposit और UPI Cash के लिए
+                authorized banking provider API integration आवश्यक है।
+                Provider activation होने तक कोई real banking transaction
+                process नहीं किया जाएगा।
               </p>
             </div>
           </div>
@@ -89,7 +90,8 @@ export default async function BankingPage() {
           </span>
         </div>
 
-        <div className="mt-5 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* ================= AEPS CARDS ================= */}
+        <div className="mt-5 grid gap-6 md:grid-cols-3">
           {/* Cash Withdrawal */}
           <Link
             href="/service2/aeps/withdraw"
@@ -108,7 +110,8 @@ export default async function BankingPage() {
             </h4>
 
             <p className="mt-2 text-sm leading-6 text-gray-500">
-              Aadhaar authentication के माध्यम से cash withdrawal service।
+              Authorized AEPS provider और required authentication के माध्यम
+              से cash withdrawal service।
             </p>
 
             <p className="mt-5 text-sm font-bold text-emerald-600">
@@ -116,7 +119,7 @@ export default async function BankingPage() {
             </p>
           </Link>
 
-          {/* Balance */}
+          {/* Balance Enquiry */}
           <Link
             href="/service2/aeps/balance"
             className="group block rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
@@ -134,7 +137,8 @@ export default async function BankingPage() {
             </h4>
 
             <p className="mt-2 text-sm leading-6 text-gray-500">
-              AEPS provider के माध्यम से bank account balance enquiry।
+              AEPS provider के माध्यम से customer bank account balance
+              enquiry service।
             </p>
 
             <p className="mt-5 text-sm font-bold text-emerald-600">
@@ -160,33 +164,8 @@ export default async function BankingPage() {
             </h4>
 
             <p className="mt-2 text-sm leading-6 text-gray-500">
-              Customer के recent bank transactions देखने की AEPS service।
-            </p>
-
-            <p className="mt-5 text-sm font-bold text-emerald-600">
-              View Setup →
-            </p>
-          </Link>
-
-          {/* Cash Deposit */}
-          <Link
-            href="/service2/aeps/deposit"
-            className="group block rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-          >
-            <div className="flex items-start justify-between">
-              <div className="text-4xl">💰</div>
-
-              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">
-                Setup
-              </span>
-            </div>
-
-            <h4 className="mt-4 text-lg font-bold text-gray-900">
-              Cash Deposit
-            </h4>
-
-            <p className="mt-2 text-sm leading-6 text-gray-500">
-              Supported provider उपलब्ध होने पर AEPS cash deposit service।
+              Authorized AEPS provider के माध्यम से recent bank transaction
+              information।
             </p>
 
             <p className="mt-5 text-sm font-bold text-emerald-600">
@@ -202,16 +181,13 @@ export default async function BankingPage() {
           </h3>
 
           <p className="mt-1 text-sm text-gray-500">
-            Money Transfer और UPI-based assisted services।
+            Money Transfer, Cash Deposit और UPI-based assisted services।
           </p>
         </div>
 
         <div className="mt-5 grid gap-6 md:grid-cols-2">
-          {/* Money Transfer */}
-          <Link
-            href="/service2/money-transfer"
-            className="block rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-          >
+          {/* ================= MONEY TRANSFER / CASH DEPOSIT ================= */}
+          <div className="rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
             <div className="flex items-start justify-between">
               <div className="text-4xl">💸</div>
 
@@ -221,20 +197,32 @@ export default async function BankingPage() {
             </div>
 
             <h4 className="mt-4 text-xl font-bold text-gray-900">
-              Money Transfer
+              Money Transfer / Cash Deposit
             </h4>
 
             <p className="mt-2 text-sm leading-6 text-gray-500">
-              DMT provider integration के बाद bank account money transfer
-              service activate होगी।
+              Money Transfer और supported Cash Deposit services authorized
+              provider integration के बाद activate होंगी।
             </p>
 
-            <p className="mt-5 font-semibold text-blue-600">
-              View Setup →
-            </p>
-          </Link>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <Link
+                href="/service2/money-transfer"
+                className="rounded-lg bg-blue-600 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-blue-700"
+              >
+                💸 Money Transfer
+              </Link>
 
-          {/* UPI Cash */}
+              <Link
+                href="/service2/aeps/deposit"
+                className="rounded-lg bg-emerald-600 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-emerald-700"
+              >
+                💰 Cash Deposit
+              </Link>
+            </div>
+          </div>
+
+          {/* ================= UPI CASH ================= */}
           <Link
             href="/service2/upi-cash"
             className="block rounded-2xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
@@ -252,8 +240,8 @@ export default async function BankingPage() {
             </h4>
 
             <p className="mt-2 text-sm leading-6 text-gray-500">
-              QR generation केवल payment request है। Real payment confirmation
-              provider verification के बाद ही valid मानी जाएगी।
+              Authorized merchant/payment provider और server-side verification
+              के बाद real UPI payment flow enable होगा।
             </p>
 
             <p className="mt-5 font-semibold text-purple-600">
@@ -282,6 +270,16 @@ export default async function BankingPage() {
             <div className="flex items-center justify-between border-b pb-3">
               <span className="font-medium text-gray-700">
                 DMT / Money Transfer Provider
+              </span>
+
+              <span className="font-bold text-amber-600">
+                Pending
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between border-b pb-3">
+              <span className="font-medium text-gray-700">
+                Cash Deposit Provider
               </span>
 
               <span className="font-bold text-amber-600">
