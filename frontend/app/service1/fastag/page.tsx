@@ -1,15 +1,135 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import {
+  FormEvent,
+  useEffect,
+  useState,
+} from "react";
+
+type FastagProviderStatus =
+  | "NOT_CONFIGURED"
+  | "TEST_MODE"
+  | "ACTIVE"
+  | "INACTIVE"
+  | "ERROR";
+
+interface FastagStatusResponse {
+  success: boolean;
+  message: string;
+  provider?: string;
+  data?: {
+    configured: boolean;
+    available: boolean;
+    status: FastagProviderStatus;
+    message: string;
+  };
+  errorCode?: string;
+}
 
 export default function FastagRechargePage() {
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [amount, setAmount] = useState("");
+
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const [providerLoading, setProviderLoading] = useState(true);
+  const [providerError, setProviderError] = useState("");
+  const [providerName, setProviderName] = useState(
+    "FASTag Provider",
+  );
+  const [providerStatus, setProviderStatus] =
+    useState<FastagProviderStatus>("NOT_CONFIGURED");
+  const [providerConfigured, setProviderConfigured] =
+    useState(false);
+  const [providerAvailable, setProviderAvailable] =
+    useState(false);
+
+  // ======================================================
+  // LOAD INTERNAL FASTAG PROVIDER STATUS
+  // ======================================================
+  useEffect(() => {
+    let active = true;
+
+    async function loadProviderStatus() {
+      try {
+        setProviderLoading(true);
+        setProviderError("");
+
+        const response = await fetch(
+          "/api/internal/fastag/status",
+          {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "no-store",
+          },
+        );
+
+        const result =
+          (await response.json()) as FastagStatusResponse;
+
+        if (!active) {
+          return;
+        }
+
+        if (!response.ok || !result.success || !result.data) {
+          setProviderStatus("ERROR");
+          setProviderConfigured(false);
+          setProviderAvailable(false);
+
+          setProviderError(
+            result.message ||
+              "FASTag provider status load नहीं हो सका.",
+          );
+
+          return;
+        }
+
+        setProviderName(
+          result.provider || "FASTag Provider",
+        );
+
+        setProviderStatus(result.data.status);
+        setProviderConfigured(result.data.configured);
+        setProviderAvailable(result.data.available);
+      } catch (statusError) {
+        console.error(
+          "FASTAG PROVIDER STATUS LOAD ERROR:",
+          statusError,
+        );
+
+        if (!active) {
+          return;
+        }
+
+        setProviderStatus("ERROR");
+        setProviderConfigured(false);
+        setProviderAvailable(false);
+
+        setProviderError(
+          "FASTag provider status check failed.",
+        );
+      } finally {
+        if (active) {
+          setProviderLoading(false);
+        }
+      }
+    }
+
+    loadProviderStatus();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // ======================================================
+  // FORM VALIDATION
+  // ======================================================
+  function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
     setError("");
@@ -32,15 +152,80 @@ export default function FastagRechargePage() {
       return;
     }
 
-    if (!Number.isFinite(rechargeAmount) || rechargeAmount < 1) {
+    if (
+      !Number.isFinite(rechargeAmount) ||
+      rechargeAmount < 1
+    ) {
       setError("Valid recharge amount भरें।");
       return;
     }
 
+    if (providerLoading) {
+      setMessage(
+        "FASTag provider status अभी check हो रहा है। कृपया कुछ समय बाद दोबारा प्रयास करें।",
+      );
+      return;
+    }
+
+    if (
+      !providerConfigured ||
+      !providerAvailable ||
+      providerStatus !== "ACTIVE"
+    ) {
+      setMessage(
+        "FASTag provider API अभी active नहीं है। कोई recharge, payment या transaction process नहीं किया गया है।",
+      );
+      return;
+    }
+
+    /*
+     * IMPORTANT:
+     *
+     * Provider ACTIVE होने पर भी यहाँ सीधे payment/recharge
+     * शुरू नहीं किया गया है।
+     *
+     * अगले integration चरण में:
+     * 1. Vehicle lookup
+     * 2. FASTag issuer/provider validation
+     * 3. Recharge quote/request
+     * 4. Payment
+     * 5. Provider transaction verification
+     *
+     * server-side internal APIs के माध्यम से जोड़े जाएंगे।
+     */
+
     setMessage(
-      "FASTag provider API अभी configured नहीं है। कोई recharge, payment या transaction process नहीं किया गया है।"
+      "FASTag provider available है, लेकिन live recharge workflow अभी enable नहीं किया गया है। कोई payment या transaction process नहीं किया गया है।",
     );
   }
+
+  // ======================================================
+  // DISPLAY VALUES
+  // ======================================================
+  const providerStatusText = providerLoading
+    ? "Checking..."
+    : providerStatus === "ACTIVE"
+      ? "Active"
+      : providerStatus === "TEST_MODE"
+        ? "Test Mode"
+        : providerStatus === "INACTIVE"
+          ? "Inactive"
+          : providerStatus === "ERROR"
+            ? "Status Error"
+            : "Pending";
+
+  const providerStatusClass =
+    providerStatus === "ACTIVE"
+      ? "text-emerald-600"
+      : providerStatus === "ERROR"
+        ? "text-red-600"
+        : "text-amber-600";
+
+  const liveRechargeEnabled =
+    !providerLoading &&
+    providerConfigured &&
+    providerAvailable &&
+    providerStatus === "ACTIVE";
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -78,30 +263,42 @@ export default function FastagRechargePage() {
           </h2>
 
           <p className="mt-3 max-w-2xl text-sm leading-6 text-blue-50">
-            FASTag recharge service के लिए provider-ready setup। Authorized
-            provider activation के बाद live vehicle lookup, recharge और
-            transaction verification enable किया जाएगा।
+            FASTag recharge service के लिए provider-ready
+            setup। Authorized provider activation के बाद
+            live vehicle lookup, recharge और transaction
+            verification enable किया जाएगा।
           </p>
         </div>
 
         {/* ================= SETUP NOTICE ================= */}
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
-          <div className="flex gap-3">
-            <span className="text-2xl">⚠️</span>
+        {!liveRechargeEnabled && (
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
+            <div className="flex gap-3">
+              <span className="text-2xl">⚠️</span>
 
-            <div>
-              <h3 className="font-bold text-amber-900">
-                FASTag Provider Setup Required
-              </h3>
+              <div>
+                <h3 className="font-bold text-amber-900">
+                  FASTag Provider Setup Required
+                </h3>
 
-              <p className="mt-1 text-sm leading-6 text-amber-800">
-                Authorized FASTag / BBPS provider API अभी configured नहीं है।
-                Provider activation होने तक कोई real FASTag recharge,
-                payment या transaction process नहीं किया जाएगा।
-              </p>
+                <p className="mt-1 text-sm leading-6 text-amber-800">
+                  Authorized FASTag provider API अभी active
+                  नहीं है। Provider activation और live
+                  workflow integration complete होने तक कोई
+                  real FASTag recharge, payment या transaction
+                  process नहीं किया जाएगा।
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* ================= STATUS API ERROR ================= */}
+        {providerError && (
+          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+            Provider Status: {providerError}
+          </div>
+        )}
 
         {/* ================= STATUS ================= */}
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
@@ -110,8 +307,14 @@ export default function FastagRechargePage() {
               Provider
             </p>
 
-            <p className="mt-2 font-bold text-amber-600">
-              Pending
+            <p
+              className={`mt-2 font-bold ${providerStatusClass}`}
+            >
+              {providerStatusText}
+            </p>
+
+            <p className="mt-1 text-xs text-gray-400">
+              {providerName}
             </p>
           </div>
 
@@ -121,7 +324,9 @@ export default function FastagRechargePage() {
             </p>
 
             <p className="mt-2 font-bold text-amber-600">
-              Pending
+              {liveRechargeEnabled
+                ? "Integration Pending"
+                : "Pending"}
             </p>
           </div>
 
@@ -130,8 +335,16 @@ export default function FastagRechargePage() {
               Live Recharge
             </p>
 
-            <p className="mt-2 font-bold text-amber-600">
-              Disabled
+            <p
+              className={`mt-2 font-bold ${
+                liveRechargeEnabled
+                  ? "text-amber-600"
+                  : "text-amber-600"
+              }`}
+            >
+              {liveRechargeEnabled
+                ? "Workflow Pending"
+                : "Disabled"}
             </p>
           </div>
         </div>
@@ -172,7 +385,9 @@ export default function FastagRechargePage() {
                 type="text"
                 value={vehicleNumber}
                 onChange={(event) =>
-                  setVehicleNumber(event.target.value.toUpperCase())
+                  setVehicleNumber(
+                    event.target.value.toUpperCase(),
+                  )
                 }
                 placeholder="UP65AB1234"
                 maxLength={15}
@@ -201,7 +416,9 @@ export default function FastagRechargePage() {
                   min="1"
                   step="1"
                   value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
+                  onChange={(event) =>
+                    setAmount(event.target.value)
+                  }
                   placeholder="500"
                   className="w-full rounded-lg border border-gray-300 py-3 pl-8 pr-4 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
@@ -216,9 +433,10 @@ export default function FastagRechargePage() {
             </h4>
 
             <p className="mt-1 text-sm leading-6 text-blue-700">
-              FASTag issuer/provider list को अभी hard-code नहीं किया गया है।
-              Authorized provider API मिलने के बाद supported provider और
-              vehicle lookup data API से load किए जाएंगे।
+              FASTag issuer/provider list को hard-code नहीं
+              किया गया है। Authorized provider API मिलने के
+              बाद supported issuer और vehicle lookup data
+              server-side provider adapter से load किए जाएंगे।
             </p>
           </div>
 
@@ -238,9 +456,12 @@ export default function FastagRechargePage() {
 
           <button
             type="submit"
-            className="mt-6 rounded-lg bg-slate-800 px-7 py-3 font-semibold text-white transition hover:bg-slate-900"
+            disabled={providerLoading}
+            className="mt-6 rounded-lg bg-slate-800 px-7 py-3 font-semibold text-white transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Check Setup →
+            {providerLoading
+              ? "Checking Provider..."
+              : "Check Setup →"}
           </button>
         </form>
 
@@ -251,9 +472,10 @@ export default function FastagRechargePage() {
           </h3>
 
           <p className="mt-2 text-sm leading-6 text-gray-600">
-            Provider integration complete होने से पहले इस page से कोई payment
-            collect नहीं किया जाएगा और कोई successful FASTag recharge status
-            generate नहीं किया जाएगा।
+            Provider integration और complete live workflow
+            verification से पहले इस page से कोई payment collect
+            नहीं किया जाएगा और कोई successful FASTag recharge
+            status generate नहीं किया जाएगा।
           </p>
         </div>
 
