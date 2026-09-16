@@ -715,7 +715,7 @@ function DthPaymentContent() {
               }
               className="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg"
             >
-              Service 1 पर जाएँ
+              Dashboard पर जाएँ
             </button>
           )}
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { dthRechargeProvider } from "@/lib/providers/recharge/provider";
 
 export const runtime = "nodejs";
 
@@ -26,7 +27,9 @@ function parseDthDescription(
   }
 
   try {
-    return JSON.parse(description) as DthDescription;
+    return JSON.parse(
+      description
+    ) as DthDescription;
   } catch {
     return {};
   }
@@ -36,14 +39,16 @@ function parseDthDescription(
 // DTH PROCESS
 // ======================================================
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request
+) {
   try {
     console.log("================================");
     console.log("DTH PROCESS API CALLED");
     console.log("================================");
 
     // ==================================================
-    // USER CHECK
+    // AUTH
     // ==================================================
 
     const user = await getCurrentUser();
@@ -99,7 +104,7 @@ export async function POST(request: Request) {
     }
 
     // ==================================================
-    // FIND DTH TRANSACTION
+    // FIND TRANSACTION
     // ==================================================
 
     const transaction =
@@ -139,7 +144,8 @@ export async function POST(request: Request) {
 
     const providerFallback =
       transaction.provider &&
-      transaction.provider.toUpperCase() !== "RAZORPAY"
+      transaction.provider.toUpperCase() !==
+        "RAZORPAY"
         ? transaction.provider
         : "";
 
@@ -151,11 +157,12 @@ export async function POST(request: Request) {
       details.payment?.currency ||
       "INR";
 
-    const amount =
-      Number(transaction.amount);
+    const amount = Number(
+      transaction.amount
+    );
 
     // ==================================================
-    // ALREADY PROCESSED
+    // ALREADY COMPLETED
     // ==================================================
 
     if (status === "DTH_SUCCESS") {
@@ -205,19 +212,14 @@ export async function POST(request: Request) {
     }
 
     // ==================================================
-    // PAYMENT VERIFICATION CHECK
-    //
-    // Generic Razorpay verify route changes:
-    // PENDING -> SUCCESS
-    //
-    // Therefore SUCCESS means payment is verified and
-    // the DTH recharge can now be processed.
+    // PAYMENT MUST BE VERIFIED
     // ==================================================
 
     if (status !== "SUCCESS") {
       return NextResponse.json(
         {
           success: false,
+
           message:
             `Payment is not successful yet. Current status: ${transaction.status}`,
         },
@@ -228,7 +230,7 @@ export async function POST(request: Request) {
     }
 
     // ==================================================
-    // DTH DATA CHECK
+    // TRANSACTION DATA CHECK
     // ==================================================
 
     if (
@@ -239,6 +241,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
+
           message:
             "DTH transaction data is incomplete.",
         },
@@ -249,22 +252,91 @@ export async function POST(request: Request) {
     }
 
     // ==================================================
-    // DTH PROVIDER
-    //
-    // Current project flow uses DTH_TEST_MODE for demo
-    // processing. A real DTH provider API should replace
-    // this block later.
+    // INTERNAL PROVIDER STATUS
     // ==================================================
 
-    const testMode =
-      process.env.DTH_TEST_MODE === "true";
+    const providerHealth =
+      await dthRechargeProvider.healthCheck();
 
-    if (!testMode) {
+    const providerReady =
+      providerHealth.success &&
+      providerHealth.data?.configured ===
+        true &&
+      providerHealth.data?.available ===
+        true &&
+      providerHealth.data?.status ===
+        "ACTIVE";
+
+    // ==================================================
+    // PROVIDER NOT ACTIVE
+    // ==================================================
+
+    if (!providerReady) {
       return NextResponse.json(
         {
           success: false,
+
           message:
-            "DTH provider API अभी configure नहीं है.",
+            "Payment verified है, लेकिन DTH provider अभी active नहीं है। DTH recharge process नहीं किया गया है.",
+
+          errorCode:
+            "DTH_PROVIDER_NOT_ACTIVE",
+
+          paymentVerified: true,
+
+          processed: false,
+
+          provider: {
+            name:
+              providerHealth.provider ||
+              "Recharge Provider",
+
+            status:
+              providerHealth.data
+                ?.status ||
+              "NOT_CONFIGURED",
+
+            configured:
+              providerHealth.data
+                ?.configured ??
+              false,
+
+            available:
+              providerHealth.data
+                ?.available ??
+              false,
+          },
+
+          transaction: {
+            transactionId:
+              transaction.transactionId,
+
+            amount:
+              transaction.amount.toString(),
+
+            status:
+              transaction.status,
+          },
+
+          dth: {
+            customerId,
+            operator,
+          },
+
+          payment: {
+            currency,
+
+            provider:
+              transaction.razorpayPaymentId
+                ? "RAZORPAY"
+                : transaction.provider,
+
+            razorpayOrderId:
+              transaction.razorpayOrderId,
+
+            razorpayPaymentId:
+              transaction.razorpayPaymentId,
+          },
         },
         {
           status: 503,
@@ -272,55 +344,59 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(
-      "DTH TEST MODE PROCESSING:",
-      {
-        transactionId:
-          transaction.transactionId,
-        customerId,
-        operator,
-        amount,
-      }
-    );
-
     // ==================================================
-    // FINAL DTH STATUS
-    // ==================================================
-
-    const updatedTransaction =
-      await prisma.transaction.update({
-        where: {
-          id: transaction.id,
-        },
-
-        data: {
-          status: "DTH_SUCCESS",
-          updatedAt: new Date(),
-        },
-      });
-
-    // ==================================================
-    // SUCCESS RESPONSE
+    // LIVE PROVIDER WORKFLOW NOT IMPLEMENTED
+    //
+    // IMPORTANT:
+    // Provider ACTIVE होने का मतलब recharge SUCCESS
+    // नहीं है.
+    //
+    // Future flow:
+    //
+    // 1. Send recharge request to authorized provider
+    // 2. Receive provider reference
+    // 3. Verify provider transaction status
+    // 4. Only verified SUCCESS may update:
+    //
+    //       status = "DTH_SUCCESS"
+    //
+    // DTH_TEST_MODE intentionally removed from this
+    // production-safe processing route.
     // ==================================================
 
     return NextResponse.json(
       {
-        success: true,
+        success: false,
 
         message:
-          "DTH recharge successful.",
+          "DTH provider active है, लेकिन live DTH recharge workflow अभी enabled नहीं है.",
 
-        transactionId:
-          updatedTransaction.transactionId,
+        errorCode:
+          "DTH_WORKFLOW_NOT_IMPLEMENTED",
 
-        amount:
-          updatedTransaction.amount.toString(),
+        paymentVerified: true,
 
-        status:
-          updatedTransaction.status,
+        processed: false,
 
-        processed: true,
-        alreadyProcessed: false,
+        provider: {
+          name:
+            providerHealth.provider ||
+            "Recharge Provider",
+
+          status:
+            providerHealth.data?.status,
+        },
+
+        transaction: {
+          transactionId:
+            transaction.transactionId,
+
+          amount:
+            transaction.amount.toString(),
+
+          status:
+            transaction.status,
+        },
 
         dth: {
           customerId,
@@ -331,19 +407,19 @@ export async function POST(request: Request) {
           currency,
 
           provider:
-            updatedTransaction.razorpayPaymentId
+            transaction.razorpayPaymentId
               ? "RAZORPAY"
-              : updatedTransaction.provider,
+              : transaction.provider,
 
           razorpayOrderId:
-            updatedTransaction.razorpayOrderId,
+            transaction.razorpayOrderId,
 
           razorpayPaymentId:
-            updatedTransaction.razorpayPaymentId,
+            transaction.razorpayPaymentId,
         },
       },
       {
-        status: 200,
+        status: 503,
       }
     );
   } catch (error) {
@@ -355,6 +431,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
+
         message:
           "DTH recharge processing failed. Please try again.",
       },

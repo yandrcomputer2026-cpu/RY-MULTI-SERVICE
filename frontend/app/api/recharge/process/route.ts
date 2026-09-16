@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { prepaidRechargeProvider } from "@/lib/providers/recharge/provider";
+
+export const runtime = "nodejs";
 
 type RechargeDescription = {
   bookingType?: string;
@@ -25,17 +28,21 @@ function parseRechargeDescription(
   }
 
   try {
-    return JSON.parse(description) as RechargeDescription;
+    return JSON.parse(
+      description
+    ) as RechargeDescription;
   } catch {
-    // Old prepaid transactions used plain-text descriptions.
-    // They remain supported through referenceId/provider fallbacks below.
     return {};
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request
+) {
   try {
-    // ================= USER CHECK =================
+    // ================================================
+    // AUTH
+    // ================================================
 
     const user = await getCurrentUser();
 
@@ -49,7 +56,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // ================= REQUEST DATA =================
+    // ================================================
+    // REQUEST
+    // ================================================
 
     let body: {
       transactionId?: unknown;
@@ -75,13 +84,16 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Transaction ID is required.",
+          message:
+            "Transaction ID is required.",
         },
         { status: 400 }
       );
     }
 
-    // ================= FIND TRANSACTION =================
+    // ================================================
+    // TRANSACTION
+    // ================================================
 
     const transaction =
       await prisma.transaction.findFirst({
@@ -96,13 +108,12 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Prepaid recharge transaction not found.",
+          message:
+            "Prepaid recharge transaction not found.",
         },
         { status: 404 }
       );
     }
-
-    // ================= READ RECHARGE DETAILS =================
 
     const details =
       parseRechargeDescription(
@@ -114,14 +125,10 @@ export async function POST(request: Request) {
       transaction.referenceId ||
       "";
 
-    /*
-     * New transactions keep the real mobile operator in description.
-     * Old transactions may still have it in provider.
-     * Do not use RAZORPAY as the mobile operator.
-     */
     const providerFallback =
       transaction.provider &&
-      transaction.provider.toUpperCase() !== "RAZORPAY"
+      transaction.provider.toUpperCase() !==
+        "RAZORPAY"
         ? transaction.provider
         : "";
 
@@ -135,7 +142,13 @@ export async function POST(request: Request) {
     const currency =
       details.payment?.currency || "INR";
 
-    // ================= ALREADY RECHARGED =================
+    const amount = Number(
+      transaction.amount
+    );
+
+    // ================================================
+    // ALREADY COMPLETED
+    // ================================================
 
     if (
       transaction.status ===
@@ -143,16 +156,15 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json({
         success: true,
-        message: "Recharge already completed.",
+        message:
+          "Recharge already completed.",
 
         recharge: {
           transactionId:
             transaction.transactionId,
 
           mobile,
-
           operator,
-
           circle,
 
           amount:
@@ -177,9 +189,13 @@ export async function POST(request: Request) {
       });
     }
 
-    // ================= PAYMENT CHECK =================
+    // ================================================
+    // PAYMENT MUST BE VERIFIED
+    // ================================================
 
-    if (transaction.status !== "SUCCESS") {
+    if (
+      transaction.status !== "SUCCESS"
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -191,61 +207,140 @@ export async function POST(request: Request) {
       );
     }
 
-    // ================= TEST RECHARGE =================
+    // ================================================
+    // TRANSACTION DATA CHECK
+    // ================================================
+
+    if (
+      !mobile ||
+      !operator ||
+      !circle ||
+      !Number.isFinite(amount)
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Prepaid recharge transaction data is incomplete.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // ================================================
+    // INTERNAL PROVIDER STATUS
+    // ================================================
+
+    const providerHealth =
+      await prepaidRechargeProvider.healthCheck();
+
+    const providerReady =
+      providerHealth.success &&
+      providerHealth.data?.configured ===
+        true &&
+      providerHealth.data?.available ===
+        true &&
+      providerHealth.data?.status ===
+        "ACTIVE";
+
+    if (!providerReady) {
+      return NextResponse.json(
+        {
+          success: false,
+
+          message:
+            "Payment verified है, लेकिन Mobile Prepaid provider अभी active नहीं है। Recharge process नहीं किया गया है.",
+
+          errorCode:
+            "RECHARGE_PROVIDER_NOT_ACTIVE",
+
+          paymentVerified: true,
+
+          provider: {
+            name:
+              providerHealth.provider ||
+              "Recharge Provider",
+
+            status:
+              providerHealth.data
+                ?.status ||
+              "NOT_CONFIGURED",
+
+            configured:
+              providerHealth.data
+                ?.configured ??
+              false,
+
+            available:
+              providerHealth.data
+                ?.available ??
+              false,
+          },
+
+          transaction: {
+            transactionId:
+              transaction.transactionId,
+
+            status:
+              transaction.status,
+
+            amount:
+              transaction.amount.toString(),
+          },
+        },
+        { status: 503 }
+      );
+    }
+
+    // ================================================
+    // LIVE PROVIDER WORKFLOW NOT IMPLEMENTED YET
     //
-    // अभी यह TEST recharge है.
-    // वास्तविक recharge provider API integration
-    // बाद में इसी section में लगाया जाएगा.
-    // =================================================
+    // IMPORTANT:
+    // Provider ACTIVE होना अकेले recharge success का
+    // प्रमाण नहीं है.
+    //
+    // Future flow:
+    // 1. Send recharge request to authorized provider
+    // 2. Receive provider reference
+    // 3. Verify provider transaction status
+    // 4. Only verified SUCCESS may update DB to
+    //    RECHARGE_SUCCESS
+    // ================================================
 
-    const updatedTransaction =
-      await prisma.transaction.update({
-        where: {
-          id: transaction.id,
+    return NextResponse.json(
+      {
+        success: false,
+
+        message:
+          "Recharge provider active है, लेकिन live Mobile Prepaid recharge workflow अभी enabled नहीं है.",
+
+        errorCode:
+          "RECHARGE_WORKFLOW_NOT_IMPLEMENTED",
+
+        paymentVerified: true,
+
+        provider: {
+          name:
+            providerHealth.provider ||
+            "Recharge Provider",
+
+          status:
+            providerHealth.data?.status,
         },
 
-        data: {
-          status: "RECHARGE_SUCCESS",
+        transaction: {
+          transactionId:
+            transaction.transactionId,
+
+          status:
+            transaction.status,
+
+          amount:
+            transaction.amount.toString(),
         },
-      });
-
-    // ================= RESPONSE =================
-
-    return NextResponse.json({
-      success: true,
-
-      message: "Recharge successful.",
-
-      recharge: {
-        transactionId:
-          updatedTransaction.transactionId,
-
-        mobile,
-
-        operator,
-
-        circle,
-
-        amount:
-          updatedTransaction.amount.toString(),
-
-        currency,
-
-        status:
-          updatedTransaction.status,
-
-        paymentProvider:
-          updatedTransaction.razorpayPaymentId
-            ? "RAZORPAY"
-            : updatedTransaction.provider,
-
-        razorpayOrderId:
-          updatedTransaction.razorpayOrderId,
-
-        razorpayPaymentId:
-          updatedTransaction.razorpayPaymentId,
       },
-    });
+      { status: 503 }
+    );
   } catch (error) {
     console.error(
       "RECHARGE PROCESS ERROR:",
@@ -255,7 +350,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: "Recharge processing failed.",
+        message:
+          "Recharge processing failed.",
       },
       { status: 500 }
     );

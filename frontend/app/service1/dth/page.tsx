@@ -66,6 +66,48 @@ export default function DTHPage() {
     setLoading(true);
 
     try {
+            // ================= PROVIDER STATUS CHECK =================
+
+      const statusResponse = await fetch(
+        "/api/internal/recharge/status",
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      const statusData =
+        await statusResponse.json();
+
+if (
+  !statusResponse.ok ||
+  !statusData.success
+) {
+  setError(
+    statusData.message ||
+      "DTH provider status check नहीं हो पाया।"
+  );
+
+  setLoading(false);
+  return;
+}
+
+      const dthProvider =
+        statusData.services?.dth;
+
+      const providerReady =
+        dthProvider?.success === true &&
+        dthProvider?.data?.configured === true &&
+        dthProvider?.data?.available === true &&
+        dthProvider?.data?.status === "ACTIVE";
+
+      if (!providerReady) {
+        setError(
+          "DTH provider अभी active नहीं है। इसलिए payment शुरू नहीं किया गया है।"
+        );
+setLoading(false);
+        return;
+      }
       const response = await fetch(
         "/api/recharge/dth",
         {

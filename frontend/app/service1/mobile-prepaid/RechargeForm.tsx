@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function RechargeForm() {
   const router = useRouter();
@@ -51,6 +51,45 @@ export default function RechargeForm() {
 
     try {
       setLoading(true);
+            // ================= PROVIDER STATUS CHECK =================
+
+      const statusResponse = await fetch(
+        "/api/internal/recharge/status",
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      const statusData =
+        await statusResponse.json();
+
+      if (
+        !statusResponse.ok ||
+        !statusData.success
+      ) {
+        setError(
+          statusData.message ||
+            "Recharge provider status check नहीं हो पाया।"
+        );
+        return;
+      }
+
+      const prepaidProvider =
+        statusData.services?.mobilePrepaid;
+
+      const providerReady =
+        prepaidProvider?.success === true &&
+        prepaidProvider?.data?.configured === true &&
+        prepaidProvider?.data?.available === true &&
+        prepaidProvider?.data?.status === "ACTIVE";
+
+      if (!providerReady) {
+        setError(
+          "Mobile Prepaid provider अभी active नहीं है। इसलिए payment शुरू नहीं किया गया है।"
+        );
+        return;
+      }
 
       // ================= CREATE RECHARGE TRANSACTION =================
 
