@@ -3,6 +3,10 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
+import {
+  electricityProvider,
+} from "@/lib/providers/bbps/provider";
+
 export const runtime = "nodejs";
 
 // ======================================================
@@ -214,6 +218,66 @@ export async function POST(request: Request) {
         },
         {
           status: 400,
+        }
+      );
+    }
+        // ==================================================
+    // BBPS PROVIDER SERVER-SIDE CHECK
+    //
+    // Frontend check alone is not enough.
+    // This prevents direct API calls from bypassing
+    // provider availability validation.
+    // ==================================================
+
+    const providerHealth =
+      await electricityProvider.healthCheck();
+
+    const providerReady =
+      providerHealth.success === true &&
+      providerHealth.data?.configured === true &&
+      providerHealth.data?.available === true &&
+      providerHealth.data?.status === "ACTIVE";
+
+    if (!providerReady) {
+      console.warn(
+        "ELECTRICITY CREATE BLOCKED - BBPS PROVIDER NOT ACTIVE:",
+        {
+          userId: user.id,
+          providerStatus:
+            providerHealth.data?.status,
+        }
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+
+          message:
+            "Electricity BBPS provider अभी active नहीं है। इसलिए transaction और payment शुरू नहीं किया गया है।",
+
+          code:
+            "ELECTRICITY_PROVIDER_NOT_ACTIVE",
+
+          provider: {
+            configured:
+              providerHealth.data?.configured ??
+              false,
+
+            available:
+              providerHealth.data?.available ??
+              false,
+
+            status:
+              providerHealth.data?.status ??
+              "ERROR",
+
+            message:
+              providerHealth.data?.message ||
+              providerHealth.message,
+          },
+        },
+        {
+          status: 503,
         }
       );
     }

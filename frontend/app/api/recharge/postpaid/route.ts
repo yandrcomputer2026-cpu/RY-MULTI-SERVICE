@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+import {
+  mobilePostpaidProvider,
+} from "@/lib/providers/bbps/provider";
+
 export const runtime = "nodejs";
 
 // ======================================================
@@ -167,7 +171,68 @@ export async function POST(request: Request) {
         }
       );
     }
+    
+    // ==================================================
+    // BBPS PROVIDER SERVER-SIDE CHECK
+    //
+    // Frontend check alone is not enough.
+    // This prevents direct API calls from bypassing
+    // provider availability validation.
+    // ==================================================
 
+    const providerHealth =
+      await mobilePostpaidProvider.healthCheck();
+
+    const providerReady =
+      providerHealth.success === true &&
+      providerHealth.data?.configured === true &&
+      providerHealth.data?.available === true &&
+      providerHealth.data?.status === "ACTIVE";
+
+    if (!providerReady) {
+      console.warn(
+        "POSTPAID CREATE BLOCKED - BBPS PROVIDER NOT ACTIVE:",
+        {
+          userId: user.id,
+          providerStatus:
+            providerHealth.data?.status,
+        }
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+
+          message:
+            "Mobile Postpaid BBPS provider अभी active नहीं है। इसलिए transaction और payment शुरू नहीं किया गया है।",
+
+          code:
+            "POSTPAID_PROVIDER_NOT_ACTIVE",
+
+          provider: {
+            configured:
+              providerHealth.data?.configured ??
+              false,
+
+            available:
+              providerHealth.data?.available ??
+              false,
+
+            status:
+              providerHealth.data?.status ??
+              "ERROR",
+
+            message:
+              providerHealth.data?.message ||
+              providerHealth.message,
+          },
+        },
+        {
+          status: 503,
+        }
+      );
+    }
+    
     // ==================================================
     // UNIQUE TRANSACTION ID
     // ==================================================

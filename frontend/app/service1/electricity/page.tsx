@@ -57,6 +57,49 @@ export default function ElectricityPage() {
     setLoading(true);
 
     try {
+            // ================= BBPS PROVIDER STATUS CHECK =================
+
+      const statusResponse = await fetch(
+        "/api/internal/bbps/status",
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      const statusData =
+        await statusResponse.json();
+
+      if (
+        !statusResponse.ok ||
+        !statusData.success
+      ) {
+        setError(
+          statusData.message ||
+            "BBPS provider status check नहीं हो पाया।"
+        );
+
+        setLoading(false);
+        return;
+      }
+
+      const electricityProvider =
+        statusData.services?.electricity;
+
+      const providerReady =
+        electricityProvider?.success === true &&
+        electricityProvider?.data?.configured === true &&
+        electricityProvider?.data?.available === true &&
+        electricityProvider?.data?.status === "ACTIVE";
+
+      if (!providerReady) {
+        setError(
+          "Electricity BBPS provider अभी active नहीं है। इसलिए payment शुरू नहीं किया गया है।"
+        );
+
+        setLoading(false);
+        return;
+      }
       const response = await fetch(
         "/api/recharge/electricity",
         {
