@@ -3,12 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
-
 type Passenger = {
   name: string;
   age: string;
@@ -39,14 +33,37 @@ type TrainBookingData = {
   totalAmount: number;
 };
 
+type TravelHealth = {
+  configured?: boolean;
+  available?: boolean;
+  status?: string;
+  message?: string;
+};
+
+type TravelStatusResponse = {
+  success?: boolean;
+  message?: string;
+  services?: {
+    train?: TravelHealth;
+  };
+};
+
 export default function TrainPaymentPage() {
   const router = useRouter();
 
-  const [booking, setBooking] = useState<TrainBookingData | null>(null);
+  const [booking, setBooking] =
+    useState<TrainBookingData | null>(null);
+
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // ====================================================
+  // LOAD BOOKING
+  // ====================================================
 
   useEffect(() => {
-    const storedBooking = sessionStorage.getItem("ryTrainBooking");
+    const storedBooking =
+      sessionStorage.getItem("ryTrainBooking");
 
     if (!storedBooking) {
       router.replace("/service2/train");
@@ -54,7 +71,9 @@ export default function TrainPaymentPage() {
     }
 
     try {
-      const parsedBooking: TrainBookingData = JSON.parse(storedBooking);
+      const parsedBooking: TrainBookingData =
+        JSON.parse(storedBooking);
+
       setBooking(parsedBooking);
     } catch {
       sessionStorage.removeItem("ryTrainBooking");
@@ -62,144 +81,106 @@ export default function TrainPaymentPage() {
     }
   }, [router]);
 
-  useEffect(() => {
-    const script = document.createElement("script");
+  // ====================================================
+  // PROVIDER CHECK
+  // ====================================================
 
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
-  async function handlePayment() {
-    if (!booking) return;
+  async function handleContinue() {
+    if (!booking || loading) {
+      return;
+    }
 
     try {
       setLoading(true);
+      setError("");
 
-      const response = await fetch("/api/train/create-order", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: booking.totalAmount,
-        }),
-      });
+      const statusResponse = await fetch(
+        "/api/internal/travel/status",
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
 
-      const data = await response.json();
+      const statusData: TravelStatusResponse =
+        await statusResponse.json();
 
-      if (!response.ok) {
-        alert(data.message || "Payment order create नहीं हो पाया।");
+      if (!statusResponse.ok || !statusData.success) {
+        setError(
+          statusData.message ||
+            "Train provider status check नहीं हो सका।"
+        );
         return;
       }
 
-      const options = {
-        key: data.keyId,
-        amount: data.amount,
-        currency: data.currency,
-        name: "RY MULTI SERVICE",
-        description: `Train Booking - ${booking.trainName}`,
-        order_id: data.orderId,
+      const trainStatus = statusData.services?.train;
 
-        prefill: {
-          email: booking.contact.email,
-          contact: booking.contact.mobile,
-        },
+      if (
+        !trainStatus ||
+        trainStatus.configured !== true ||
+        trainStatus.available !== true ||
+        trainStatus.status !== "ACTIVE"
+      ) {
+        setError(
+          "Train booking provider अभी active नहीं है। इसलिए payment शुरू नहीं किया गया है।"
+        );
+        return;
+      }
 
-        theme: {
-          color: "#2563eb",
-        },
+      // IMPORTANT:
+      // Provider registry में ACTIVE होना अकेले पर्याप्त नहीं है.
+      // Authorized provider booking workflow, server-side fare,
+      // availability verification और booking confirmation
+      // implement होने तक payment शुरू नहीं करना है.
 
-        handler: async function (response: {
-          razorpay_payment_id: string;
-          razorpay_order_id: string;
-          razorpay_signature: string;
-        }) {
-          const verifyResponse = await fetch("/api/train/verify-payment", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpayOrderId: response.razorpay_order_id,
-              razorpaySignature: response.razorpay_signature,
-              booking,
-            }),
-          });
-
-          const verifyData = await verifyResponse.json();
-
-          if (!verifyResponse.ok) {
-            alert(
-              verifyData.message ||
-                "Payment verify नहीं हो पाया।"
-            );
-            return;
-          }
-
-          const confirmedBooking = {
-            ...booking,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpayOrderId: response.razorpay_order_id,
-            bookingId: verifyData.bookingId,
-            status: "CONFIRMED",
-          };
-
-          sessionStorage.setItem(
-            "ryTrainBooking",
-            JSON.stringify(confirmedBooking)
-          );
-
-          router.push("/service2/train/confirmation");
-        },
-      };
-
-      const razorpay = new window.Razorpay(options);
-
-      razorpay.on("payment.failed", function () {
-        alert("Payment failed हो गया। कृपया दोबारा कोशिश करें।");
-      });
-
-      razorpay.open();
+      setError(
+        "Train provider active है, लेकिन live train booking workflow अभी implement नहीं हुआ है। इसलिए payment शुरू नहीं किया गया है।"
+      );
     } catch (error) {
-      console.error(error);
-      alert("Payment शुरू करने में error आया।");
+      console.error("TRAIN PROVIDER CHECK ERROR:", error);
+
+      setError(
+        "Train provider status check में समस्या हुई। Payment शुरू नहीं किया गया है।"
+      );
     } finally {
       setLoading(false);
     }
   }
 
+  // ====================================================
+  // LOADING
+  // ====================================================
+
   if (!booking) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gray-100">
         <p className="text-gray-600">
-          Payment details load हो रही हैं...
+          Train details load हो रही हैं...
         </p>
       </main>
     );
   }
 
+  // ====================================================
+  // PAGE
+  // ====================================================
+
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-8">
       <div className="mx-auto max-w-3xl">
-
         <div className="mb-6">
           <p className="text-sm font-semibold text-blue-600">
             RY MULTI SERVICE
           </p>
 
           <h1 className="mt-1 text-3xl font-bold text-gray-900">
-            💳 Train Payment
+            🚆 Train Booking Review
           </h1>
 
           <p className="mt-2 text-sm text-gray-600">
-            अपनी booking details जांचें और सुरक्षित payment करें।
+            Demo booking details जांचें। Payment केवल authorized
+            Train provider और complete live booking workflow उपलब्ध
+            होने के बाद शुरू होगा।
           </p>
         </div>
 
@@ -214,40 +195,28 @@ export default function TrainPaymentPage() {
 
           <div className="mt-5 grid grid-cols-2 gap-5 md:grid-cols-4">
             <div>
-              <p className="text-xs text-gray-500">
-                From
-              </p>
-
+              <p className="text-xs text-gray-500">From</p>
               <p className="font-semibold text-gray-900">
                 {booking.from}
               </p>
             </div>
 
             <div>
-              <p className="text-xs text-gray-500">
-                To
-              </p>
-
+              <p className="text-xs text-gray-500">To</p>
               <p className="font-semibold text-gray-900">
                 {booking.to}
               </p>
             </div>
 
             <div>
-              <p className="text-xs text-gray-500">
-                Date
-              </p>
-
+              <p className="text-xs text-gray-500">Date</p>
               <p className="font-semibold text-gray-900">
                 {booking.date}
               </p>
             </div>
 
             <div>
-              <p className="text-xs text-gray-500">
-                Class
-              </p>
-
+              <p className="text-xs text-gray-500">Class</p>
               <p className="font-semibold text-gray-900">
                 {booking.travelClass}
               </p>
@@ -257,13 +226,13 @@ export default function TrainPaymentPage() {
 
         <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
           <h2 className="text-xl font-bold text-gray-900">
-            Payment Summary
+            Demo Fare Summary
           </h2>
 
           <div className="mt-5 space-y-4">
             <div className="flex justify-between border-b border-gray-100 pb-3">
               <span className="text-gray-600">
-                Base Fare
+                Demo Base Fare
               </span>
 
               <span className="font-semibold text-gray-900">
@@ -273,7 +242,7 @@ export default function TrainPaymentPage() {
 
             <div className="flex justify-between border-b border-gray-100 pb-3">
               <span className="text-gray-600">
-                Convenience Fee
+                Demo Convenience Fee
               </span>
 
               <span className="font-semibold text-gray-900">
@@ -283,7 +252,7 @@ export default function TrainPaymentPage() {
 
             <div className="flex items-center justify-between pt-2">
               <span className="text-lg font-bold text-gray-900">
-                Amount Payable
+                Demo Total
               </span>
 
               <span className="text-3xl font-bold text-blue-600">
@@ -293,11 +262,30 @@ export default function TrainPaymentPage() {
           </div>
         </div>
 
-        <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-4">
-          <p className="text-sm text-green-800">
-            Payment Razorpay के secure checkout से process होगा।
+        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="font-semibold text-amber-800">
+            Demo / Setup Mode
+          </p>
+
+          <p className="mt-1 text-sm text-amber-800">
+            दिखाई गई train, availability और fare live railway
+            inventory नहीं हैं। Authorized provider से actual
+            availability और fare verify किए बिना payment या
+            confirmed ticket जारी नहीं किया जाएगा।
           </p>
         </div>
+
+        {error && (
+          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4">
+            <p className="font-semibold text-red-700">
+              Train Booking
+            </p>
+
+            <p className="mt-1 text-sm text-red-700">
+              {error}
+            </p>
+          </div>
+        )}
 
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
           <button
@@ -310,13 +298,13 @@ export default function TrainPaymentPage() {
 
           <button
             type="button"
-            onClick={handlePayment}
+            onClick={handleContinue}
             disabled={loading}
             className="w-full rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
           >
             {loading
-              ? "Payment शुरू हो रहा है..."
-              : `Pay ₹${booking.totalAmount}`}
+              ? "Provider Check हो रहा है..."
+              : "Check Provider & Continue"}
           </button>
         </div>
       </div>

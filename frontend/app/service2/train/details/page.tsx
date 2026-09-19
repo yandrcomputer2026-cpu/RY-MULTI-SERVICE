@@ -142,15 +142,16 @@ function TrainDetailsContent() {
           </div>
         </div>
 
-        <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-4">
-          <p className="text-sm font-medium text-green-800">
-            Availability: AVAILABLE
-          </p>
+        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+  <p className="text-sm font-medium text-amber-800">
+    Demo Availability: AVAILABLE
+  </p>
 
-          <p className="mt-1 text-sm text-green-700">
-            Demo booking flow के लिए सीट उपलब्ध मानी जा रही है।
-          </p>
-        </div>
+  <p className="mt-1 text-sm text-amber-700">
+    यह live railway availability नहीं है। Authorized Train provider जुड़ने के बाद
+    actual seat availability verify की जाएगी।
+  </p>
+</div>
 
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
           <button

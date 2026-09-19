@@ -97,7 +97,7 @@ export default function TrainFareSummaryPage() {
           </h1>
 
           <p className="mt-2 text-sm text-gray-600">
-            Payment से पहले अपनी booking details जांचें।
+            Demo booking details और estimated fare जांचें।
           </p>
         </div>
 
@@ -241,7 +241,7 @@ export default function TrainFareSummaryPage() {
 
             <div className="flex items-center justify-between pt-2">
               <span className="text-lg font-bold text-gray-900">
-                Total Payable
+                Demo Total
               </span>
 
               <span className="text-3xl font-bold text-blue-600">
@@ -273,7 +273,7 @@ export default function TrainFareSummaryPage() {
             onClick={handleProceedToPayment}
             className="w-full rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
           >
-            Proceed to Payment →
+            Continue →
           </button>
         </div>
       </div>

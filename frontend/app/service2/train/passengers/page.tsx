@@ -319,9 +319,10 @@ function TrainPassengersContent() {
               Contact Details
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
-              Booking confirmation इसी contact पर भेजा जाएगा।
-            </p>
+<p className="mt-1 text-sm text-gray-500">
+  Booking updates के लिए ये contact details इस्तेमाल की जाएँगी।
+  Live ticket confirmation authorized Train provider से verification के बाद ही होगा।
+</p>
 
             <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
               <div>
@@ -365,7 +366,7 @@ function TrainPassengersContent() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">
-                  Current Total Fare
+                  Demo Total Fare
                 </p>
 
                 <p className="text-xs text-gray-500">

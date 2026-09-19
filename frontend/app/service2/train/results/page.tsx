@@ -149,8 +149,8 @@ function TrainResultsContent() {
               <div className="mt-6 flex flex-col gap-4 border-t border-gray-200 pt-5 md:flex-row md:items-center md:justify-between">
 
                 <div>
-                  <p className="text-sm font-semibold text-green-600">
-                    {train.available}
+                  <p className="text-sm font-semibold text-amber-600">
+                    Demo Availability: {train.available}
                   </p>
 
                   <p className="mt-1 text-sm text-gray-600">
@@ -161,7 +161,7 @@ function TrainResultsContent() {
                 <div className="flex items-center gap-5">
                   <div className="text-right">
                     <p className="text-xs text-gray-500">
-                      Fare per passenger
+                      Demo Fare per passenger
                     </p>
 
                     <p className="text-xl font-bold text-gray-900">

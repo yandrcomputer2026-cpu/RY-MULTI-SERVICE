@@ -47,7 +47,7 @@ export default function TrainPage() {
           </h1>
 
           <p className="mt-2 text-sm text-gray-600">
-            अपनी ट्रेन खोजें और आसानी से टिकट बुक करें।
+            Demo train search देखें। Live booking authorized provider जुड़ने के बाद उपलब्ध होगी।
           </p>
         </div>
 
@@ -192,13 +192,13 @@ export default function TrainPage() {
           <div className="rounded-xl bg-white p-5 text-center shadow-sm">
             <div className="text-3xl">🎫</div>
 
-            <h3 className="mt-3 font-bold text-gray-900">
-              Easy Booking
-            </h3>
+<h3 className="mt-3 font-bold text-gray-900">
+  Provider Verified Booking
+</h3>
 
-            <p className="mt-2 text-sm text-gray-600">
-              Payment के बाद confirmation ticket प्राप्त करें।
-            </p>
+<p className="mt-2 text-sm text-gray-600">
+  Authorized provider जुड़ने के बाद verified booking और ticket सुविधा उपलब्ध होगी।
+</p>
           </div>
 
         </div>
