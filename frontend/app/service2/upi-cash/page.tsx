@@ -10,26 +10,73 @@ export default function UpiCashPage() {
   const [consent, setConsent] = useState(false);
   const [message, setMessage] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage("");
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  setMessage("");
 
-    const numericAmount = Number(amount);
+  const numericAmount = Number(amount);
 
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      setMessage("कृपया सही Payment Amount डालें।");
+  if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+    setMessage("कृपया सही Payment Amount डालें।");
+    return;
+  }
+
+  if (!consent) {
+    setMessage(
+      "UPI Cash setup check के लिए consent देना जरूरी है।",
+    );
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "/api/internal/banking/status",
+      {
+        method: "GET",
+        cache: "no-store",
+      },
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      setMessage(
+        data.message ||
+          "Banking provider status check नहीं हो पाया।",
+      );
       return;
     }
 
-    if (!consent) {
-      setMessage("UPI Cash setup check के लिए consent देना जरूरी है।");
+    const upiCashProvider =
+      data.services?.upiCash;
+
+    const providerReady =
+      upiCashProvider?.success === true &&
+      upiCashProvider?.data?.configured === true &&
+      upiCashProvider?.data?.available === true &&
+      upiCashProvider?.data?.status === "ACTIVE";
+
+    if (!providerReady) {
+      setMessage(
+        "UPI Cash provider अभी active नहीं है। इसलिए कोई QR या payment request generate नहीं की गई है।",
+      );
       return;
     }
 
     setMessage(
-      "UPI payment provider अभी configure नहीं है। Amount validation successful है, लेकिन कोई QR या payment request generate नहीं की गई।"
+      "UPI Cash provider active है, लेकिन live verified QR/payment workflow अभी implement नहीं किया गया है। कोई payment request generate नहीं की गई।",
+    );
+  } catch (error) {
+    console.error(
+      "UPI CASH STATUS ERROR:",
+      error,
+    );
+
+    setMessage(
+      "Banking provider status check नहीं हो पाया। कृपया बाद में दोबारा कोशिश करें।",
     );
   }
+}
 
   return (
     <main className="min-h-screen bg-slate-50">

@@ -11,31 +11,78 @@ export default function AepsBalancePage() {
   const [consent, setConsent] = useState(false);
   const [message, setMessage] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage("");
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  setMessage("");
 
-    const cleanMobile = mobile.replace(/\D/g, "");
+  const cleanMobile = mobile.replace(/\D/g, "");
 
-    if (!bank) {
-      setMessage("कृपया Bank चुनें।");
+  if (!bank) {
+    setMessage("कृपया Bank चुनें।");
+    return;
+  }
+
+  if (!/^[6-9]\d{9}$/.test(cleanMobile)) {
+    setMessage("कृपया सही 10 अंकों का Mobile Number डालें।");
+    return;
+  }
+
+  if (!consent) {
+    setMessage(
+      "AEPS Balance Enquiry के लिए consent देना जरूरी है।",
+    );
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "/api/internal/banking/status",
+      {
+        method: "GET",
+        cache: "no-store",
+      },
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      setMessage(
+        data.message ||
+          "Banking provider status check नहीं हो पाया।",
+      );
       return;
     }
 
-    if (!/^[6-9]\d{9}$/.test(cleanMobile)) {
-      setMessage("कृपया सही 10 अंकों का Mobile Number डालें।");
-      return;
-    }
+    const aepsProvider =
+      data.services?.aeps;
 
-    if (!consent) {
-      setMessage("AEPS Balance Enquiry के लिए consent देना जरूरी है।");
+    const providerReady =
+      aepsProvider?.success === true &&
+      aepsProvider?.data?.configured === true &&
+      aepsProvider?.data?.available === true &&
+      aepsProvider?.data?.status === "ACTIVE";
+
+    if (!providerReady) {
+      setMessage(
+        "AEPS provider अभी active नहीं है। इसलिए Balance Enquiry process शुरू नहीं की गई है।",
+      );
       return;
     }
 
     setMessage(
-      "AEPS provider अभी configure नहीं है। Details validation successful है, लेकिन कोई Balance Enquiry process नहीं की गई।"
+      "AEPS provider active है, लेकिन live Balance Enquiry workflow अभी implement नहीं किया गया है। कोई request process नहीं की गई।",
+    );
+  } catch (error) {
+    console.error(
+      "AEPS BALANCE ENQUIRY STATUS ERROR:",
+      error,
+    );
+
+    setMessage(
+      "Banking provider status check नहीं हो पाया। कृपया बाद में दोबारा कोशिश करें।",
     );
   }
+}
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -54,7 +101,7 @@ export default function AepsBalancePage() {
 
           <button
             type="button"
-            onClick={() => router.push("/Dashboard")}
+            onClick={() => router.push("/dashboard")}
             className="rounded-lg border px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
           >
             ← Dashboard

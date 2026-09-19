@@ -11,32 +11,79 @@ export default function MoneyTransferPage() {
   const [consent, setConsent] = useState(false);
   const [message, setMessage] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage("");
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  setMessage("");
 
-    const cleanMobile = mobile.replace(/\D/g, "");
-    const cleanAmount = Number(amount);
+  const cleanMobile = mobile.replace(/\D/g, "");
+  const cleanAmount = Number(amount);
 
-    if (!/^[6-9]\d{9}$/.test(cleanMobile)) {
-      setMessage("कृपया सही 10 अंकों का Mobile Number डालें।");
+  if (!/^[6-9]\d{9}$/.test(cleanMobile)) {
+    setMessage("कृपया सही 10 अंकों का Mobile Number डालें।");
+    return;
+  }
+
+  if (!Number.isFinite(cleanAmount) || cleanAmount <= 0) {
+    setMessage("कृपया सही Transfer Amount डालें।");
+    return;
+  }
+
+  if (!consent) {
+    setMessage(
+      "Money Transfer setup check के लिए consent देना जरूरी है।",
+    );
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "/api/internal/banking/status",
+      {
+        method: "GET",
+        cache: "no-store",
+      },
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      setMessage(
+        data.message ||
+          "Banking provider status check नहीं हो पाया।",
+      );
       return;
     }
 
-    if (!Number.isFinite(cleanAmount) || cleanAmount <= 0) {
-      setMessage("कृपया सही Transfer Amount डालें।");
-      return;
-    }
+    const moneyTransferProvider =
+      data.services?.moneyTransfer;
 
-    if (!consent) {
-      setMessage("Money Transfer setup check के लिए consent देना जरूरी है।");
+    const providerReady =
+      moneyTransferProvider?.success === true &&
+      moneyTransferProvider?.data?.configured === true &&
+      moneyTransferProvider?.data?.available === true &&
+      moneyTransferProvider?.data?.status === "ACTIVE";
+
+    if (!providerReady) {
+      setMessage(
+        "Money Transfer provider अभी active नहीं है। इसलिए fund transfer process शुरू नहीं किया गया है।",
+      );
       return;
     }
 
     setMessage(
-      "Money Transfer provider अभी configure नहीं है। Details validation successful है, लेकिन कोई fund transfer process नहीं किया गया।"
+      "Money Transfer provider active है, लेकिन live DMT workflow अभी implement नहीं किया गया है। कोई fund transfer process नहीं किया गया।",
+    );
+  } catch (error) {
+    console.error(
+      "MONEY TRANSFER STATUS ERROR:",
+      error,
+    );
+
+    setMessage(
+      "Banking provider status check नहीं हो पाया। कृपया बाद में दोबारा कोशिश करें।",
     );
   }
+}
 
   return (
     <main className="min-h-screen bg-slate-50">

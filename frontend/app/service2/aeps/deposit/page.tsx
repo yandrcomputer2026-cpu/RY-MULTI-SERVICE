@@ -12,37 +12,84 @@ export default function AepsDepositPage() {
   const [consent, setConsent] = useState(false);
   const [message, setMessage] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage("");
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  setMessage("");
 
-    const cleanMobile = mobile.replace(/\D/g, "");
-    const cleanAmount = Number(amount);
+  const cleanMobile = mobile.replace(/\D/g, "");
+  const cleanAmount = Number(amount);
 
-    if (!bank) {
-      setMessage("कृपया Bank चुनें।");
+  if (!bank) {
+    setMessage("कृपया Bank चुनें।");
+    return;
+  }
+
+  if (!/^[6-9]\d{9}$/.test(cleanMobile)) {
+    setMessage("कृपया सही 10 अंकों का Mobile Number डालें।");
+    return;
+  }
+
+  if (!Number.isFinite(cleanAmount) || cleanAmount <= 0) {
+    setMessage("कृपया सही Deposit Amount डालें।");
+    return;
+  }
+
+  if (!consent) {
+    setMessage(
+      "AEPS Cash Deposit के लिए consent देना जरूरी है।",
+    );
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "/api/internal/banking/status",
+      {
+        method: "GET",
+        cache: "no-store",
+      },
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      setMessage(
+        data.message ||
+          "Banking provider status check नहीं हो पाया।",
+      );
       return;
     }
 
-    if (!/^[6-9]\d{9}$/.test(cleanMobile)) {
-      setMessage("कृपया सही 10 अंकों का Mobile Number डालें।");
-      return;
-    }
+    const aepsProvider =
+      data.services?.aeps;
 
-    if (!Number.isFinite(cleanAmount) || cleanAmount <= 0) {
-      setMessage("कृपया सही Deposit Amount डालें।");
-      return;
-    }
+    const providerReady =
+      aepsProvider?.success === true &&
+      aepsProvider?.data?.configured === true &&
+      aepsProvider?.data?.available === true &&
+      aepsProvider?.data?.status === "ACTIVE";
 
-    if (!consent) {
-      setMessage("AEPS Cash Deposit के लिए consent देना जरूरी है।");
+    if (!providerReady) {
+      setMessage(
+        "AEPS provider अभी active नहीं है। इसलिए Cash Deposit process शुरू नहीं किया गया है।",
+      );
       return;
     }
 
     setMessage(
-      "AEPS provider अभी configure नहीं है। Details validation successful है, लेकिन कोई Cash Deposit transaction process नहीं किया गया।"
+      "AEPS provider active है, लेकिन supported live Cash Deposit workflow अभी implement और verify नहीं किया गया है। कोई transaction process नहीं किया गया।",
+    );
+  } catch (error) {
+    console.error(
+      "AEPS CASH DEPOSIT STATUS ERROR:",
+      error,
+    );
+
+    setMessage(
+      "Banking provider status check नहीं हो पाया। कृपया बाद में दोबारा कोशिश करें।",
     );
   }
+}
 
   return (
     <main className="min-h-screen bg-slate-50">
