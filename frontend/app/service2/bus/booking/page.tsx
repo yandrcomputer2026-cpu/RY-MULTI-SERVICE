@@ -375,175 +375,79 @@ export default function BusBookingPage() {
   // ==================================================
 
   async function confirmBooking() {
-    setError("");
+  setError("");
 
-    if (!bus) {
-      setError(
-        "Bus details नहीं मिलीं।"
-      );
-      return;
-    }
+  if (!bus) {
+    setError("Bus details नहीं मिलीं।");
+    return;
+  }
+
+  if (selectedSeats.length === 0) {
+    setError("कृपया कम से कम एक seat select करें।");
+    return;
+  }
+
+  try {
+    // ==========================================
+    // 1. CHECK TRAVEL / BUS PROVIDER FIRST
+    // ==========================================
+
+    const statusResponse = await fetch(
+      "/api/internal/travel/status",
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
+
+    const statusData = await statusResponse.json();
 
     if (
-      selectedSeats.length === 0
+      !statusResponse.ok ||
+      !statusData.success
     ) {
       setError(
-        "कृपया कम से कम एक seat select करें।"
+        statusData.message ||
+          "Bus provider status check नहीं हो सका।"
       );
       return;
     }
 
-    try {
-      setError("");
+    const busStatus =
+      statusData.services?.bus;
 
-      const firstSeat =
-        selectedSeats[0];
-
-      const passenger =
-        passengers[firstSeat];
-
-      if (!passenger) {
-        setError(
-          "Passenger details नहीं मिलीं।"
-        );
-        return;
-      }
-
-      const baseFare =
-        bus.price *
-        selectedSeats.length;
-
-      const convenienceFee =
-        selectedSeats.length > 0
-          ? 20
-          : 0;
-
-      const totalAmount =
-        baseFare +
-        convenienceFee;
-
-      const response =
-        await fetch(
-          "/api/bus/booking/create",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-              busId:
-                bus.busId,
-
-              operator:
-                bus.operator,
-
-              busType:
-                bus.busType,
-
-              from:
-                bus.from,
-
-              to:
-                bus.to,
-
-              journeyDate:
-                bus.date,
-
-              departure:
-                bus.departure,
-
-              arrival:
-                bus.arrival,
-
-              duration:
-                bus.duration,
-
-              price:
-                totalAmount,
-
-              passengerName:
-                passenger.name,
-
-              passengerAge:
-                Number(
-                  passenger.age
-                ),
-
-              passengerGender:
-                passenger.gender,
-
-              passengerMobile:
-                passenger.mobile.trim(),
-
-              seatNumber:
-                String(
-                  firstSeat
-                ),
-            }),
-          }
-        );
-
-      const data =
-        await response.json();
-
-      console.log(
-        "BUS BOOKING CREATE RESPONSE:",
-        data
-      );
-
-      if (
-        !response.ok ||
-        !data.success
-      ) {
-        setError(
-          data.message ||
-            "Bus booking transaction create नहीं हो सकी।"
-        );
-
-        return;
-      }
-
-      // ==========================================
-      // TRANSACTION CREATED
-      // ==========================================
-
-      const transactionId =
-        data.transaction
-          .transactionId;
-
-      const amount =
-        data.transaction
-          .amount;
-
-      console.log(
-        "BUS TRANSACTION CREATED:",
-        transactionId
-      );
-
-      // ==========================================
-      // NEXT STEP = PAYMENT PAGE
-      // ==========================================
-
-      window.location.href =
-        `/service2/bus/payment?transactionId=${encodeURIComponent(
-          transactionId
-        )}&amount=${encodeURIComponent(
-          amount
-        )}`;
-    } catch (error) {
-      console.error(
-        "BUS BOOKING CREATE ERROR:",
-        error
-      );
-
+    if (
+      !busStatus ||
+      busStatus.configured !== true ||
+      busStatus.available !== true ||
+      busStatus.status !== "ACTIVE"
+    ) {
       setError(
-        "Bus booking create करते समय server error आया।"
+        "Bus booking provider अभी active नहीं है। इसलिए transaction और payment शुरू नहीं किया गया है।"
       );
+      return;
     }
+
+    // ==========================================
+    // 2. LIVE BUS WORKFLOW IS NOT READY YET
+    // ==========================================
+
+    setError(
+      "Bus provider active है, लेकिन live bus booking workflow अभी implement नहीं हुआ है। इसलिए transaction और payment शुरू नहीं किया गया है।"
+    );
+
+    return;
+  } catch (error) {
+    console.error(
+      "BUS PROVIDER CHECK ERROR:",
+      error
+    );
+
+    setError(
+      "Bus provider status check में समस्या हुई। Transaction और payment शुरू नहीं किया गया है।"
+    );
   }
+}
 
   // ==================================================
   // BUS NOT FOUND
@@ -672,7 +576,7 @@ export default function BusBookingPage() {
           </h2>
 
           <p className="text-gray-600 mt-2">
-            Bus select करें, seat चुनें और passenger details भरें।
+            Demo bus, seat और fare flow review करें। Live booking authorized provider integration के बाद उपलब्ध होगी।
           </p>
 
         </div>
@@ -734,6 +638,16 @@ export default function BusBookingPage() {
           </div>
 
         </div>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-6">
+  <p className="font-bold text-amber-800">
+    Demo / Setup Mode
+  </p>
+
+  <p className="text-sm text-amber-800 mt-1">
+    दिखाई गई bus, seat layout, seat numbers, timings और fares demo data हैं।
+    ये live provider availability या confirmed reservation नहीं हैं।
+  </p>
+</div>
 
         {/* STEP INDICATOR */}
 
@@ -841,7 +755,7 @@ export default function BusBookingPage() {
 
               <div className="flex items-center gap-2">
                 <span className="w-5 h-5 rounded bg-gray-100 border border-gray-300" />
-                Available
+                Demo Available
               </div>
 
               <div className="flex items-center gap-2">
@@ -944,7 +858,7 @@ export default function BusBookingPage() {
                   <div>
 
                     <p className="text-sm text-gray-600">
-                      Base Fare
+                      Demo Base Fare
                     </p>
 
                     <p className="text-xl font-bold text-gray-900">
@@ -1364,8 +1278,8 @@ export default function BusBookingPage() {
 
                             </div>
 
-                            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                              Confirmed Selection
+                            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                              Selected
                             </span>
 
                           </div>

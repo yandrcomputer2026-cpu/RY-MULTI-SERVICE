@@ -60,53 +60,76 @@ const demoBuses: Bus[] = [
 export default function BusBookingPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [journeyDate, setJourneyDate] = useState("");
-  const [buses, setBuses] = useState<Bus[]>([]);
-  const [searched, setSearched] = useState(false);
-  const [error, setError] = useState("");
+  const [journeyDate, setJourneyDate] =
+    useState("");
+
+  const [buses, setBuses] =
+    useState<Bus[]>([]);
+
+  const [searched, setSearched] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
 
   function searchBuses() {
     setError("");
 
     if (!from.trim()) {
-      setError("Please enter boarding city.");
+      setError(
+        "Please enter boarding city."
+      );
       return;
     }
 
     if (!to.trim()) {
-      setError("Please enter destination city.");
+      setError(
+        "Please enter destination city."
+      );
       return;
     }
 
     if (!journeyDate) {
-      setError("Please select journey date.");
+      setError(
+        "Please select journey date."
+      );
       return;
     }
 
-    if (from.trim().toLowerCase() === to.trim().toLowerCase()) {
-      setError("From और To city अलग-अलग होनी चाहिए।");
+    if (
+      from.trim().toLowerCase() ===
+      to.trim().toLowerCase()
+    ) {
+      setError(
+        "From और To city अलग-अलग होनी चाहिए।"
+      );
       return;
     }
 
+    // Demo data only.
+    // Live provider integration के बाद
+    // इसे provider search response से replace करेंगे.
     setBuses(demoBuses);
     setSearched(true);
   }
 
   function selectBus(bus: Bus) {
-    const params = new URLSearchParams({
-      busId: bus.id,
-      operator: bus.operator,
-      busType: bus.busType,
-      from,
-      to,
-      date: journeyDate,
-      departure: bus.departure,
-      arrival: bus.arrival,
-      duration: bus.duration,
-      price: String(bus.price),
-    });
+    const params =
+      new URLSearchParams({
+        busId: bus.id,
+        operator: bus.operator,
+        busType: bus.busType,
+        from,
+        to,
+        date: journeyDate,
+        departure: bus.departure,
+        arrival: bus.arrival,
+        duration: bus.duration,
+        price: String(bus.price),
+      });
 
-    window.location.href = `/service2/bus/booking?${params.toString()}`;
+    window.location.href =
+      `/service2/bus/booking?${params.toString()}`;
   }
 
   return (
@@ -142,13 +165,28 @@ export default function BusBookingPage() {
           </h2>
 
           <p className="text-gray-600 mt-2">
-            अपने शहर से destination तक bus search और booking करें।
+            Bus booking flow का demo देखें।
+            Live booking authorized provider
+            integration के बाद उपलब्ध होगी।
+          </p>
+        </div>
+
+        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <p className="font-bold text-amber-800">
+            Demo / Setup Mode
+          </p>
+
+          <p className="text-sm text-amber-800 mt-1">
+            इस page पर दिखाई गई buses,
+            operators, timings, seats और fares
+            demo data हैं। ये live bus inventory
+            या confirmed availability नहीं हैं।
           </p>
         </div>
 
         <div className="bg-white rounded-xl shadow p-6">
           <h3 className="text-xl font-bold text-gray-900 mb-6">
-            Search Buses
+            Demo Bus Search
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -160,7 +198,9 @@ export default function BusBookingPage() {
               <input
                 type="text"
                 value={from}
-                onChange={(e) => setFrom(e.target.value)}
+                onChange={(e) =>
+                  setFrom(e.target.value)
+                }
                 placeholder="Boarding city"
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -174,7 +214,9 @@ export default function BusBookingPage() {
               <input
                 type="text"
                 value={to}
-                onChange={(e) => setTo(e.target.value)}
+                onChange={(e) =>
+                  setTo(e.target.value)
+                }
                 placeholder="Destination city"
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -188,8 +230,16 @@ export default function BusBookingPage() {
               <input
                 type="date"
                 value={journeyDate}
-                min={new Date().toISOString().split("T")[0]}
-                onChange={(e) => setJourneyDate(e.target.value)}
+                min={
+                  new Date()
+                    .toISOString()
+                    .split("T")[0]
+                }
+                onChange={(e) =>
+                  setJourneyDate(
+                    e.target.value
+                  )
+                }
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -207,17 +257,17 @@ export default function BusBookingPage() {
               onClick={searchBuses}
               className="bg-blue-600 text-white px-7 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
             >
-              🔍 Search Buses
+              🔍 Show Demo Buses
             </button>
           </div>
         </div>
 
         {searched && (
           <div className="mt-8">
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900">
-                  Available Buses
+                  Demo Bus Options
                 </h3>
 
                 <p className="text-gray-600 mt-1">
@@ -225,8 +275,8 @@ export default function BusBookingPage() {
                 </p>
               </div>
 
-              <span className="text-sm text-gray-500">
-                {buses.length} buses found
+              <span className="text-sm text-amber-700 font-semibold">
+                {buses.length} demo options
               </span>
             </div>
 
@@ -238,9 +288,15 @@ export default function BusBookingPage() {
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                     <div className="flex-1">
-                      <h4 className="text-xl font-bold text-gray-900">
-                        {bus.operator}
-                      </h4>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h4 className="text-xl font-bold text-gray-900">
+                          {bus.operator}
+                        </h4>
+
+                        <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full">
+                          DEMO
+                        </span>
+                      </div>
 
                       <p className="text-gray-500 mt-1">
                         {bus.busType}
@@ -249,7 +305,7 @@ export default function BusBookingPage() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
                         <div>
                           <p className="text-xs text-gray-500">
-                            Departure
+                            Demo Departure
                           </p>
 
                           <p className="font-bold text-gray-900 mt-1">
@@ -259,7 +315,7 @@ export default function BusBookingPage() {
 
                         <div>
                           <p className="text-xs text-gray-500">
-                            Arrival
+                            Demo Arrival
                           </p>
 
                           <p className="font-bold text-gray-900 mt-1">
@@ -269,7 +325,7 @@ export default function BusBookingPage() {
 
                         <div>
                           <p className="text-xs text-gray-500">
-                            Duration
+                            Demo Duration
                           </p>
 
                           <p className="font-bold text-gray-900 mt-1">
@@ -279,10 +335,10 @@ export default function BusBookingPage() {
 
                         <div>
                           <p className="text-xs text-gray-500">
-                            Available Seats
+                            Demo Seat Count
                           </p>
 
-                          <p className="font-bold text-green-600 mt-1">
+                          <p className="font-bold text-amber-700 mt-1">
                             {bus.seats}
                           </p>
                         </div>
@@ -291,19 +347,25 @@ export default function BusBookingPage() {
 
                     <div className="lg:text-right">
                       <p className="text-sm text-gray-500">
-                        Starting from
+                        Demo Fare
                       </p>
 
                       <p className="text-2xl font-bold text-gray-900 mt-1">
                         ₹{bus.price}
                       </p>
 
+                      <p className="text-xs text-gray-500 mt-1">
+                        Not live provider fare
+                      </p>
+
                       <button
                         type="button"
-                        onClick={() => selectBus(bus)}
+                        onClick={() =>
+                          selectBus(bus)
+                        }
                         className="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
                       >
-                        Select Bus →
+                        Continue Demo →
                       </button>
                     </div>
                   </div>
@@ -314,12 +376,12 @@ export default function BusBookingPage() {
         )}
 
         <div className="mt-10">
-<Link
-  href="/dashboard"
-  className="inline-block bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-900"
->
-  ← Dashboard पर वापस जाएँ
-</Link>
+          <Link
+            href="/dashboard"
+            className="inline-block bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-900"
+          >
+            ← Dashboard पर वापस जाएँ
+          </Link>
         </div>
       </div>
     </main>

@@ -34,6 +34,8 @@ type BookingDetails = {
   passengerGender: string;
   passengerMobile: string;
   seatNumber: string;
+  bookingStatus: string;
+  providerReference: string;
 };
 
 export default function BusConfirmationPage() {
@@ -54,10 +56,6 @@ export default function BusConfirmationPage() {
   const [error, setError] =
     useState("");
 
-  // ==================================================
-  // LOAD BOOKING
-  // ==================================================
-
   useEffect(() => {
     async function loadBooking() {
       try {
@@ -71,24 +69,18 @@ export default function BusConfirmationPage() {
           return;
         }
 
-        const response =
-          await fetch(
-            `/api/payment/transaction/${encodeURIComponent(
-              transactionId
-            )}`,
-            {
-              method: "GET",
-              cache: "no-store",
-            }
-          );
+        const response = await fetch(
+          `/api/payment/transaction/${encodeURIComponent(
+            transactionId
+          )}`,
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
 
         const data =
           await response.json();
-
-        console.log(
-          "BUS CONFIRMATION RESPONSE:",
-          data
-        );
 
         if (
           !response.ok ||
@@ -108,14 +100,11 @@ export default function BusConfirmationPage() {
           transactionData
         );
 
-        const parsedBooking =
+        setBooking(
           parseBookingDescription(
             transactionData.description,
             transactionData.provider
-          );
-
-        setBooking(
-          parsedBooking
+          )
         );
       } catch (error) {
         console.error(
@@ -134,10 +123,6 @@ export default function BusConfirmationPage() {
     loadBooking();
   }, [transactionId]);
 
-  // ==================================================
-  // PARSE BOOKING DESCRIPTION
-  // ==================================================
-
   function parseBookingDescription(
     description: string | null,
     provider: string | null
@@ -145,10 +130,6 @@ export default function BusConfirmationPage() {
     if (!description) {
       return null;
     }
-
-    // ==================================================
-    // NEW JSON FORMAT
-    // ==================================================
 
     try {
       const data =
@@ -160,64 +141,60 @@ export default function BusConfirmationPage() {
       ) {
         return {
           operator:
-            data?.bus?.operator ||
-            "",
+            data?.bus?.operator || "",
 
           busType:
-            data?.bus?.busType ||
-            "",
+            data?.bus?.busType || "",
 
           from:
-            data?.bus?.from ||
-            "",
+            data?.bus?.from || "",
 
           to:
-            data?.bus?.to ||
-            "",
+            data?.bus?.to || "",
 
           journeyDate:
-            data?.bus?.journeyDate ||
-            "",
+            data?.bus?.journeyDate || "",
 
           departure:
-            data?.bus?.departure ||
-            "",
+            data?.bus?.departure || "",
 
           arrival:
-            data?.bus?.arrival ||
-            "",
+            data?.bus?.arrival || "",
 
           duration:
-            data?.bus?.duration ||
-            "",
+            data?.bus?.duration || "",
 
           passengerName:
-            data?.passenger?.name ||
-            "",
+            data?.passenger?.name || "",
 
           passengerAge:
-            data?.passenger?.age !==
-            undefined
-              ? String(
-                  data.passenger.age
-                )
+            data?.passenger?.age !== undefined
+              ? String(data.passenger.age)
               : "",
 
           passengerGender:
-            data?.passenger?.gender ||
-            "",
+            data?.passenger?.gender || "",
 
           passengerMobile:
-            data?.passenger?.mobile ||
-            "",
+            data?.passenger?.mobile || "",
 
           seatNumber:
-            data?.passenger?.seatNumber !==
-            undefined
+            data?.passenger?.seatNumber !== undefined
               ? String(
                   data.passenger.seatNumber
                 )
               : "",
+
+          bookingStatus:
+            data?.providerBooking?.status ||
+            data?.bookingStatus ||
+            "NOT_CONFIRMED",
+
+          providerReference:
+            data?.providerBooking
+              ?.providerReference ||
+            data?.providerReference ||
+            "",
         };
       }
     } catch {
@@ -226,26 +203,18 @@ export default function BusConfirmationPage() {
       );
     }
 
-    // ==================================================
-    // OLD FORMAT FALLBACK
-    // ==================================================
-
     const parts =
       description
         .split("|")
-        .map(
-          (item) =>
-            item.trim()
+        .map((item) =>
+          item.trim()
         );
 
     if (parts.length < 5) {
       return {
         operator:
           provider || "",
-
-        busType:
-          "Bus",
-
+        busType: "Bus",
         from: "",
         to: "",
         journeyDate: "",
@@ -257,6 +226,9 @@ export default function BusConfirmationPage() {
         passengerGender: "",
         passengerMobile: "",
         seatNumber: "",
+        bookingStatus:
+          "NOT_CONFIRMED",
+        providerReference: "",
       };
     }
 
@@ -266,72 +238,55 @@ export default function BusConfirmationPage() {
     const routeParts =
       route
         .split("→")
-        .map(
-          (item) =>
-            item.trim()
+        .map((item) =>
+          item.trim()
         );
-
-    const from =
-      routeParts[0] || "";
-
-    const to =
-      routeParts[1] || "";
-
-    const journeyDate =
-      parts[2] || "";
-
-    const passengerText =
-      parts[3] || "";
-
-    const seatText =
-      parts[4] || "";
-
-    const passengerName =
-      passengerText
-        .replace(
-          /^Passenger:\s*/i,
-          ""
-        )
-        .trim();
-
-    const seatNumber =
-      seatText
-        .replace(
-          /^Seat:\s*/i,
-          ""
-        )
-        .trim();
 
     return {
       operator:
         provider || "",
 
-      busType:
-        "Bus",
+      busType: "Bus",
 
-      from,
+      from:
+        routeParts[0] || "",
 
-      to,
+      to:
+        routeParts[1] || "",
 
-      journeyDate,
+      journeyDate:
+        parts[2] || "",
 
       departure: "",
       arrival: "",
       duration: "",
 
-      passengerName,
+      passengerName:
+        (parts[3] || "")
+          .replace(
+            /^Passenger:\s*/i,
+            ""
+          )
+          .trim(),
 
       passengerAge: "",
       passengerGender: "",
       passengerMobile: "",
 
-      seatNumber,
+      seatNumber:
+        (parts[4] || "")
+          .replace(
+            /^Seat:\s*/i,
+            ""
+          )
+          .trim(),
+
+      bookingStatus:
+        "NOT_CONFIRMED",
+
+      providerReference: "",
     };
   }
-
-  // ==================================================
-  // FORMAT DATE
-  // ==================================================
 
   function formatDate(
     value: string
@@ -363,55 +318,23 @@ export default function BusConfirmationPage() {
     );
   }
 
-  // ==================================================
-  // PRINT
-  // ==================================================
-
-  function printTicket() {
-    window.print();
-  }
-
-  // ==================================================
-  // LOADING
-  // ==================================================
-
   if (loading) {
     return (
       <main className="min-h-screen bg-gray-100">
-
-        <header className="bg-white shadow-sm px-6 py-4 print:hidden">
-          <div className="max-w-6xl mx-auto">
-
-            <h1 className="text-xl font-bold text-blue-700">
-              RY MULTI SERVICE
-            </h1>
-
-          </div>
-        </header>
-
         <div className="max-w-4xl mx-auto px-6 py-16">
-
           <div className="bg-white rounded-xl shadow p-10 text-center">
-
             <div className="text-5xl">
               ⏳
             </div>
 
             <p className="text-gray-600 mt-4">
-              Bus booking confirmation load हो रही है...
+              Bus booking details load हो रही हैं...
             </p>
-
           </div>
-
         </div>
-
       </main>
     );
   }
-
-  // ==================================================
-  // ERROR
-  // ==================================================
 
   if (
     error ||
@@ -419,27 +342,14 @@ export default function BusConfirmationPage() {
   ) {
     return (
       <main className="min-h-screen bg-gray-100">
-
-        <header className="bg-white shadow-sm px-6 py-4 print:hidden">
-          <div className="max-w-6xl mx-auto">
-
-            <h1 className="text-xl font-bold text-blue-700">
-              RY MULTI SERVICE
-            </h1>
-
-          </div>
-        </header>
-
         <div className="max-w-4xl mx-auto px-6 py-16">
-
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-8 text-center">
-
             <div className="text-5xl">
               ❌
             </div>
 
             <h2 className="text-2xl font-bold mt-4">
-              Booking Details नहीं मिलीं
+              Bus Booking Details नहीं मिलीं
             </h2>
 
             <p className="mt-2">
@@ -451,333 +361,210 @@ export default function BusConfirmationPage() {
               href="/service2/bus"
               className="inline-block mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700"
             >
-              ← Bus Booking पर वापस जाएँ
+              ← Bus Search पर वापस जाएँ
             </Link>
-
           </div>
-
         </div>
-
       </main>
     );
   }
 
-  // ==================================================
-  // STATUS
-  // ==================================================
+  // Payment और booking अलग-अलग facts हैं.
+  const paymentVerified =
+    transaction.status === "SUCCESS" &&
+    Boolean(
+      transaction.razorpayPaymentId
+    );
 
-  const paymentSuccess =
-    transaction.status ===
-    "SUCCESS";
+  const bookingConfirmed =
+    booking?.bookingStatus ===
+      "CONFIRMED" &&
+    Boolean(
+      booking.providerReference
+    );
 
   return (
     <main className="min-h-screen bg-gray-100">
-
-      {/* HEADER */}
-
-      <header className="bg-white shadow-sm px-6 py-4 print:hidden">
-
+      <header className="bg-white shadow-sm px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-
           <h1 className="text-xl font-bold text-blue-700">
             RY MULTI SERVICE
           </h1>
 
-          <div className="flex items-center gap-6">
-
-            <Link
-              href="/dashboard"
-              className="text-gray-600 hover:text-blue-600"
-            >
-              Dashboard
-            </Link>
-
-            <Link
-              href="/service2"
-              className="text-gray-600 hover:text-blue-600"
-            >
-              Service 2
-            </Link>
-
-          </div>
-
+          <Link
+            href="/service2/bus"
+            className="text-gray-600 hover:text-blue-600"
+          >
+            Bus Search
+          </Link>
         </div>
-
       </header>
 
-      {/* MAIN */}
-
       <div className="max-w-4xl mx-auto px-6 py-10">
-
-        {/* SUCCESS HEADER */}
-
-        <div className="bg-green-600 text-white rounded-xl shadow p-8 text-center">
-
-          <div className="text-5xl">
-            ✅
-          </div>
-
-          <h2 className="text-3xl font-bold mt-4">
-            Bus Booking Confirmation
+        <div
+          className={`rounded-xl border p-6 ${
+            bookingConfirmed
+              ? "border-green-200 bg-green-50"
+              : "border-amber-200 bg-amber-50"
+          }`}
+        >
+          <h2
+            className={`text-2xl font-bold ${
+              bookingConfirmed
+                ? "text-green-800"
+                : "text-amber-800"
+            }`}
+          >
+            {bookingConfirmed
+              ? "Bus Booking Confirmed"
+              : "Bus Booking Not Confirmed"}
           </h2>
 
-          <p className="mt-2 text-green-100">
-            आपका payment सफलतापूर्वक verify हो गया है।
+          <p
+            className={`mt-2 ${
+              bookingConfirmed
+                ? "text-green-700"
+                : "text-amber-800"
+            }`}
+          >
+            {bookingConfirmed
+              ? "Authorized Bus provider से booking confirmation प्राप्त हुआ है।"
+              : "Authorized Bus provider से verified booking confirmation / PNR उपलब्ध नहीं है।"}
           </p>
-
         </div>
 
-        {/* TICKET */}
-
-        <div
-          id="bus-ticket"
-          className="bg-white rounded-xl shadow mt-6 overflow-hidden"
-        >
-
-          {/* BOOKING HEADER */}
-
+        <div className="bg-white rounded-xl shadow mt-6 overflow-hidden">
           <div className="p-6 border-b border-gray-200">
+            <p className="text-sm text-gray-500">
+              Internal Transaction ID
+            </p>
 
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-
-              <div>
-
-                <p className="text-sm text-gray-500">
-                  Booking / Transaction ID
-                </p>
-
-                <p className="font-bold text-xl text-blue-700 mt-1 break-all">
-                  {transaction.transactionId}
-                </p>
-
-              </div>
-
-              <div>
-
-                <p className="text-sm text-gray-500">
-                  Payment Status
-                </p>
-
-                <span
-                  className={`inline-block mt-2 px-4 py-2 rounded-full text-sm font-bold ${
-                    paymentSuccess
-                      ? "bg-green-100 text-green-700"
-                      : "bg-yellow-100 text-yellow-700"
-                  }`}
-                >
-                  {transaction.status}
-                </span>
-
-              </div>
-
-            </div>
-
+            <p className="font-bold text-xl text-blue-700 mt-1 break-all">
+              {transaction.transactionId}
+            </p>
           </div>
 
-          {/* BUS DETAILS */}
-
           <div className="p-6">
-
             <h3 className="text-xl font-bold text-gray-900 mb-5">
               🚌 Bus Details
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Detail
+                label="Operator"
+                value={booking?.operator}
+              />
 
-              <div>
-                <p className="text-sm text-gray-500">
-                  Operator
-                </p>
+              <Detail
+                label="Bus Type"
+                value={booking?.busType}
+              />
 
-                <p className="font-bold text-gray-900 mt-1">
-                  {booking?.operator ||
-                    "-"}
-                </p>
-              </div>
+              <Detail
+                label="From"
+                value={booking?.from}
+              />
 
-              <div>
-                <p className="text-sm text-gray-500">
-                  Bus Type
-                </p>
+              <Detail
+                label="To"
+                value={booking?.to}
+              />
 
-                <p className="font-bold text-gray-900 mt-1">
-                  {booking?.busType ||
-                    "-"}
-                </p>
-              </div>
+              <Detail
+                label="Journey Date"
+                value={formatDate(
+                  booking?.journeyDate ||
+                    ""
+                )}
+              />
 
-              <div>
-                <p className="text-sm text-gray-500">
-                  From
-                </p>
+              <Detail
+                label="Departure"
+                value={booking?.departure}
+              />
 
-                <p className="font-bold text-gray-900 mt-1">
-                  {booking?.from ||
-                    "-"}
-                </p>
-              </div>
+              <Detail
+                label="Arrival"
+                value={booking?.arrival}
+              />
 
-              <div>
-                <p className="text-sm text-gray-500">
-                  To
-                </p>
+              <Detail
+                label="Duration"
+                value={booking?.duration}
+              />
 
-                <p className="font-bold text-gray-900 mt-1">
-                  {booking?.to ||
-                    "-"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">
-                  Journey Date
-                </p>
-
-                <p className="font-bold text-gray-900 mt-1">
-                  {formatDate(
-                    booking?.journeyDate ||
-                      ""
-                  )}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">
-                  Departure
-                </p>
-
-                <p className="font-bold text-gray-900 mt-1">
-                  {booking?.departure ||
-                    "-"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">
-                  Arrival
-                </p>
-
-                <p className="font-bold text-gray-900 mt-1">
-                  {booking?.arrival ||
-                    "-"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">
-                  Duration
-                </p>
-
-                <p className="font-bold text-gray-900 mt-1">
-                  {booking?.duration ||
-                    "-"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">
-                  Bus ID
-                </p>
-
-                <p className="font-bold text-gray-900 mt-1">
-                  {transaction.referenceId ||
-                    "-"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">
-                  Seat Number
-                </p>
-
-                <p className="font-bold text-blue-700 mt-1">
-                  {booking?.seatNumber ||
-                    "-"}
-                </p>
-              </div>
-
+              <Detail
+                label="Seat Number"
+                value={booking?.seatNumber}
+              />
             </div>
-
           </div>
 
-          {/* PASSENGER DETAILS */}
-
           <div className="border-t border-gray-200 p-6">
-
             <h3 className="text-xl font-bold text-gray-900 mb-5">
               👤 Passenger Details
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Detail
+                label="Passenger Name"
+                value={
+                  booking?.passengerName
+                }
+              />
 
-              <div>
-                <p className="text-sm text-gray-500">
-                  Passenger Name
-                </p>
+              <Detail
+                label="Age"
+                value={
+                  booking?.passengerAge
+                }
+              />
 
-                <p className="font-bold text-gray-900 mt-1">
-                  {booking?.passengerName ||
-                    "-"}
-                </p>
-              </div>
+              <Detail
+                label="Gender"
+                value={
+                  booking?.passengerGender
+                }
+              />
 
-              <div>
-                <p className="text-sm text-gray-500">
-                  Age
-                </p>
-
-                <p className="font-bold text-gray-900 mt-1">
-                  {booking?.passengerAge ||
-                    "-"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">
-                  Gender
-                </p>
-
-                <p className="font-bold text-gray-900 mt-1">
-                  {booking?.passengerGender ||
-                    "-"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">
-                  Mobile
-                </p>
-
-                <p className="font-bold text-gray-900 mt-1">
-                  {booking?.passengerMobile ||
-                    "-"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500">
-                  Seat Number
-                </p>
-
-                <p className="font-bold text-blue-700 mt-1">
-                  {booking?.seatNumber ||
-                    "-"}
-                </p>
-              </div>
-
+              <Detail
+                label="Mobile"
+                value={
+                  booking?.passengerMobile
+                }
+              />
             </div>
-
           </div>
 
-          {/* PAYMENT DETAILS */}
-
           <div className="border-t border-gray-200 p-6">
-
             <h3 className="text-xl font-bold text-gray-900 mb-5">
-              💳 Payment Details
+              💳 Payment & Booking Status
             </h3>
 
             <div className="space-y-4">
+              <StatusRow
+                label="Payment Status"
+                value={
+                  paymentVerified
+                    ? "VERIFIED"
+                    : transaction.status
+                }
+                success={
+                  paymentVerified
+                }
+              />
+
+              <StatusRow
+                label="Booking Status"
+                value={
+                  bookingConfirmed
+                    ? "CONFIRMED"
+                    : "NOT CONFIRMED"
+                }
+                success={
+                  bookingConfirmed
+                }
+              />
 
               <div className="flex justify-between gap-4">
                 <span className="text-gray-500">
@@ -792,96 +579,48 @@ export default function BusConfirmationPage() {
                 </span>
               </div>
 
-              <div className="flex flex-col md:flex-row md:justify-between gap-2">
-                <span className="text-gray-500">
-                  Transaction ID
-                </span>
-
-                <span className="font-semibold text-gray-900 break-all md:text-right">
-                  {transaction.transactionId}
-                </span>
-              </div>
-
-              {transaction.razorpayOrderId && (
-                <div className="flex flex-col md:flex-row md:justify-between gap-2">
-                  <span className="text-gray-500">
-                    Razorpay Order ID
-                  </span>
-
-                  <span className="font-semibold text-gray-900 break-all md:text-right">
-                    {transaction.razorpayOrderId}
-                  </span>
-                </div>
-              )}
-
               {transaction.razorpayPaymentId && (
-                <div className="flex flex-col md:flex-row md:justify-between gap-2">
-                  <span className="text-gray-500">
-                    Razorpay Payment ID
-                  </span>
-
-                  <span className="font-semibold text-gray-900 break-all md:text-right">
-                    {transaction.razorpayPaymentId}
-                  </span>
-                </div>
+                <Detail
+                  label="Razorpay Payment ID"
+                  value={
+                    transaction.razorpayPaymentId
+                  }
+                />
               )}
 
-              <div className="flex justify-between gap-4">
-                <span className="text-gray-500">
-                  Booking Status
-                </span>
-
-                <span
-                  className={`font-bold ${
-                    paymentSuccess
-                      ? "text-green-600"
-                      : "text-yellow-600"
-                  }`}
-                >
-                  {paymentSuccess
-                    ? "CONFIRMED"
-                    : "PENDING"}
-                </span>
-              </div>
-
+              {booking?.providerReference && (
+                <Detail
+                  label="Provider Booking Reference / PNR"
+                  value={
+                    booking.providerReference
+                  }
+                />
+              )}
             </div>
-
           </div>
 
-          {/* IMPORTANT NOTE */}
+          {!bookingConfirmed && (
+            <div className="border-t border-amber-200 bg-amber-50 p-5">
+              <p className="font-bold text-amber-800">
+                Demo / Setup Mode
+              </p>
 
-          <div className="border-t border-gray-200 bg-yellow-50 p-5">
-
-            <p className="font-bold text-yellow-800">
-              महत्वपूर्ण सूचना
-            </p>
-
-            <p className="text-sm text-yellow-700 mt-1">
-              अभी यह system booking transaction और payment confirmation रिकॉर्ड कर रहा है।
-              वास्तविक bus operator का PNR / ticket number वास्तविक Bus API integration के बाद generate होगा।
-            </p>
-
-          </div>
-
+              <p className="text-sm text-amber-800 mt-1">
+                Payment record और Bus booking confirmation अलग हैं।
+                Authorized Bus provider से verified booking response
+                और provider reference / PNR मिलने तक इसे confirmed
+                ticket नहीं माना जाएगा।
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* ACTION BUTTONS */}
-
-        <div className="mt-8 flex flex-col sm:flex-row gap-4 print:hidden">
-
-          <button
-            type="button"
-            onClick={printTicket}
-            className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700"
-          >
-            🖨️ Print Ticket
-          </button>
-
+        <div className="mt-8 flex flex-col sm:flex-row gap-4">
           <Link
-            href="/service2"
+            href="/service2/bus"
             className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 text-center"
           >
-            Service 2 पर जाएँ
+            ← Bus Search
           </Link>
 
           <Link
@@ -892,11 +631,56 @@ export default function BusConfirmationPage() {
           >
             Transaction Details
           </Link>
-
         </div>
-
       </div>
-
     </main>
+  );
+}
+
+function Detail({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | null;
+}) {
+  return (
+    <div>
+      <p className="text-sm text-gray-500">
+        {label}
+      </p>
+
+      <p className="font-bold text-gray-900 mt-1 break-all">
+        {value || "-"}
+      </p>
+    </div>
+  );
+}
+
+function StatusRow({
+  label,
+  value,
+  success,
+}: {
+  label: string;
+  value: string;
+  success: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-gray-500">
+        {label}
+      </span>
+
+      <span
+        className={`font-bold ${
+          success
+            ? "text-green-600"
+            : "text-amber-600"
+        }`}
+      >
+        {value}
+      </span>
+    </div>
   );
 }
