@@ -68,6 +68,7 @@ type BookingData = {
   provider?: {
     mode?: string;
     confirmationId?: string | null;
+    bookingStatus?: string;
   };
 
   transactionId?: string;
@@ -88,7 +89,9 @@ function formatDate(value?: string) {
     return "-";
   }
 
-  const date = new Date(`${value}T00:00:00`);
+  const date = new Date(
+    `${value}T00:00:00`
+  );
 
   if (Number.isNaN(date.getTime())) {
     return value;
@@ -122,7 +125,9 @@ function formatDateTime(value?: string) {
   });
 }
 
-function formatMoney(value?: string | number) {
+function formatMoney(
+  value?: string | number
+) {
   const number = Number(value);
 
   if (!Number.isFinite(number)) {
@@ -132,15 +137,23 @@ function formatMoney(value?: string | number) {
   return number.toLocaleString("en-IN");
 }
 
-function parseBooking(description?: string): BookingData | null {
+function parseBooking(
+  description?: string
+): BookingData | null {
   if (!description) {
     return null;
   }
 
   try {
-    return JSON.parse(description) as BookingData;
+    return JSON.parse(
+      description
+    ) as BookingData;
   } catch (error) {
-    console.error("BOOKING DESCRIPTION PARSE ERROR:", error);
+    console.error(
+      "BOOKING DESCRIPTION PARSE ERROR:",
+      error
+    );
+
     return null;
   }
 }
@@ -153,22 +166,31 @@ export default function HotelConfirmationPage() {
   const params = useParams();
   const router = useRouter();
 
-  const transactionId = decodeURIComponent(
-    String(params?.transactionId || "")
-  );
+  const transactionId =
+    decodeURIComponent(
+      String(
+        params?.transactionId || ""
+      )
+    );
 
-  // ==================================================
-  // STATE
-  // ==================================================
-
-  const [transaction, setTransaction] =
-    useState<TransactionData | null>(null);
+  const [
+    transaction,
+    setTransaction,
+  ] =
+    useState<TransactionData | null>(
+      null
+    );
 
   const [booking, setBooking] =
-    useState<BookingData | null>(null);
+    useState<BookingData | null>(
+      null
+    );
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
 
   // ==================================================
   // LOAD TRANSACTION
@@ -177,7 +199,10 @@ export default function HotelConfirmationPage() {
   useEffect(() => {
     async function loadTransaction() {
       if (!transactionId) {
-        setError("Transaction ID नहीं मिला।");
+        setError(
+          "Transaction ID नहीं मिला।"
+        );
+
         setLoading(false);
         return;
       }
@@ -187,37 +212,57 @@ export default function HotelConfirmationPage() {
         setError("");
 
         const response = await fetch(
-          `/api/payment/transaction/${encodeURIComponent(transactionId)}`,
+          `/api/payment/transaction/${encodeURIComponent(
+            transactionId
+          )}`,
           {
             method: "GET",
             cache: "no-store",
           }
         );
 
-        const data: ApiResponse = await response.json();
+        const data: ApiResponse =
+          await response.json();
 
-        console.log("HOTEL CONFIRMATION API RESPONSE:", data);
+        console.log(
+          "HOTEL TRANSACTION DETAILS:",
+          data
+        );
 
-        if (!response.ok || !data.success || !data.transaction) {
+        if (
+          !response.ok ||
+          !data.success ||
+          !data.transaction
+        ) {
           setError(
-            data.message || "Transaction details नहीं मिलीं।"
+            data.message ||
+              "Transaction details नहीं मिलीं।"
           );
+
           return;
         }
 
-        const currentTransaction = data.transaction;
+        const currentTransaction =
+          data.transaction;
 
-        setTransaction(currentTransaction);
-
-        const bookingData = parseBooking(
-          currentTransaction.description
+        setTransaction(
+          currentTransaction
         );
 
-        setBooking(bookingData);
+        setBooking(
+          parseBooking(
+            currentTransaction.description
+          )
+        );
       } catch (error) {
-        console.error("HOTEL CONFIRMATION LOAD ERROR:", error);
+        console.error(
+          "HOTEL TRANSACTION LOAD ERROR:",
+          error
+        );
 
-        setError("Transaction details load नहीं हो सकीं।");
+        setError(
+          "Transaction details load नहीं हो सकीं।"
+        );
       } finally {
         setLoading(false);
       }
@@ -234,10 +279,12 @@ export default function HotelConfirmationPage() {
     return (
       <main className="min-h-screen bg-gray-100 flex items-center justify-center px-6">
         <div className="bg-white rounded-xl shadow p-10 text-center">
-          <div className="text-5xl">⏳</div>
+          <div className="text-5xl">
+            ⏳
+          </div>
 
           <p className="text-gray-600 mt-4">
-            Hotel booking details load हो रही हैं...
+            Hotel transaction details load हो रही हैं...
           </p>
         </div>
       </main>
@@ -266,10 +313,10 @@ export default function HotelConfirmationPage() {
               </Link>
 
               <Link
-                href="/service2"
+                href="/travels"
                 className="text-gray-600 hover:text-blue-600"
               >
-                Service 2
+                Travels
               </Link>
             </div>
           </div>
@@ -277,14 +324,17 @@ export default function HotelConfirmationPage() {
 
         <div className="max-w-3xl mx-auto px-6 py-16">
           <div className="bg-white rounded-xl shadow p-10 text-center">
-            <div className="text-5xl">❌</div>
+            <div className="text-5xl">
+              ❌
+            </div>
 
             <h2 className="text-2xl font-bold text-red-600 mt-4">
-              Booking Details नहीं मिलीं
+              Transaction Details नहीं मिलीं
             </h2>
 
             <p className="text-gray-600 mt-2">
-              {error || "Transaction details उपलब्ध नहीं हैं।"}
+              {error ||
+                "Transaction details उपलब्ध नहीं हैं।"}
             </p>
 
             <Link
@@ -308,6 +358,7 @@ export default function HotelConfirmationPage() {
   const stay = booking?.stay;
   const guest = booking?.guest;
   const payment = booking?.payment;
+  const provider = booking?.provider;
 
   const amount =
     payment?.totalAmount ??
@@ -317,24 +368,55 @@ export default function HotelConfirmationPage() {
     payment?.roomFare ??
     Math.max(
       Number(amount) -
-        Number(payment?.convenienceFee || 0),
+        Number(
+          payment?.convenienceFee || 0
+        ),
       0
     );
 
   const convenienceFee =
     payment?.convenienceFee ?? 0;
 
-  const status = String(
-    transaction.status || "SUCCESS"
+  // ==================================================
+  // PAYMENT STATUS
+  // ==================================================
+
+  const paymentStatus = String(
+    transaction.status || "PENDING"
   ).toUpperCase();
 
-  const isSuccess = status === "SUCCESS";
+  const paymentVerified =
+    paymentStatus === "SUCCESS";
+
+  // ==================================================
+  // ACTUAL HOTEL BOOKING STATUS
+  //
+  // Payment success alone must NEVER confirm booking.
+  // ==================================================
+
+  const providerBookingStatus =
+    String(
+      provider?.bookingStatus ||
+        "PENDING"
+    ).toUpperCase();
+
+  const providerConfirmationId =
+    provider?.confirmationId || null;
+
+  const bookingConfirmed =
+    providerBookingStatus ===
+      "CONFIRMED" &&
+    Boolean(
+      providerConfirmationId
+    );
 
   const razorpayOrderId =
-    transaction.razorpayOrderId || null;
+    transaction.razorpayOrderId ||
+    null;
 
   const razorpayPaymentId =
-    transaction.razorpayPaymentId || null;
+    transaction.razorpayPaymentId ||
+    null;
 
   // ==================================================
   // PAGE
@@ -362,31 +444,81 @@ export default function HotelConfirmationPage() {
             </Link>
 
             <Link
-              href="/service2"
+              href="/travels"
               className="text-gray-600 hover:text-blue-600"
             >
-              Service 2
+              Travels
             </Link>
           </div>
         </div>
       </header>
 
-      {/* MAIN */}
-
       <div className="max-w-5xl mx-auto px-6 py-10">
-        {/* SUCCESS HEADER */}
+        {/* MAIN STATUS */}
 
-        <div className="bg-green-600 text-white rounded-xl p-8 text-center shadow">
-          <div className="text-5xl">✅</div>
+        {bookingConfirmed ? (
+          <div className="bg-green-600 text-white rounded-xl p-8 text-center shadow">
+            <div className="text-5xl">
+              ✅
+            </div>
 
-          <h1 className="text-3xl font-bold mt-4">
-            Hotel Booking Confirmation
-          </h1>
+            <h1 className="text-3xl font-bold mt-4">
+              Hotel Booking Confirmed
+            </h1>
 
-          <p className="mt-2">
-            आपका hotel booking payment सफलतापूर्वक verify हो गया है।
-          </p>
-        </div>
+            <p className="mt-2">
+              Hotel provider ने booking confirm कर दी है।
+            </p>
+
+            <p className="mt-3 text-sm break-all">
+              Provider Confirmation ID:{" "}
+              {providerConfirmationId}
+            </p>
+          </div>
+        ) : (
+          <div className="bg-amber-50 border border-amber-300 rounded-xl p-8 text-center shadow-sm">
+            <div className="text-5xl">
+              ⚠️
+            </div>
+
+            <h1 className="text-3xl font-bold text-amber-800 mt-4">
+              Hotel Booking Not Confirmed
+            </h1>
+
+            <p className="text-amber-800 mt-2">
+              इस transaction के लिए verified
+              Hotel provider confirmation उपलब्ध
+              नहीं है।
+            </p>
+
+            {paymentVerified && (
+              <p className="text-amber-800 mt-3 font-semibold">
+                Payment record SUCCESS है, लेकिन
+                इसे Hotel booking confirmation नहीं
+                माना गया है।
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* IMPORTANT NOTICE */}
+
+        {!bookingConfirmed && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl mt-6 p-5">
+            <h3 className="font-bold text-blue-800">
+              Payment और Booking अलग हैं
+            </h3>
+
+            <p className="text-blue-700 mt-2 text-sm leading-6">
+              Payment verification केवल payment
+              status बताती है। Hotel booking तभी
+              confirmed मानी जाएगी जब authorized
+              Hotel provider से confirmed booking
+              status और provider confirmation ID
+              दोनों मिलें।
+            </p>
+          </div>
+        )}
 
         {/* TRANSACTION HEADER */}
 
@@ -394,7 +526,7 @@ export default function HotelConfirmationPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div>
               <p className="text-sm text-gray-500">
-                Booking / Transaction ID
+                Transaction ID
               </p>
 
               <p className="text-xl font-bold text-blue-700 break-all mt-1">
@@ -409,14 +541,35 @@ export default function HotelConfirmationPage() {
 
               <span
                 className={`inline-block mt-1 px-4 py-2 rounded-full text-sm font-bold ${
-                  isSuccess
+                  paymentVerified
                     ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
+                    : paymentStatus ===
+                        "FAILED"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-amber-100 text-amber-700"
                 }`}
               >
-                {status}
+                {paymentStatus}
               </span>
             </div>
+          </div>
+
+          <div className="border-t mt-5 pt-5">
+            <p className="text-sm text-gray-500">
+              Hotel Booking Status
+            </p>
+
+            <span
+              className={`inline-block mt-2 px-4 py-2 rounded-full text-sm font-bold ${
+                bookingConfirmed
+                  ? "bg-green-100 text-green-700"
+                  : "bg-amber-100 text-amber-700"
+              }`}
+            >
+              {bookingConfirmed
+                ? "CONFIRMED"
+                : "NOT CONFIRMED"}
+            </span>
           </div>
         </div>
 
@@ -527,14 +680,13 @@ export default function HotelConfirmationPage() {
                 Refundable
               </p>
 
-              <p
-                className={`font-bold mt-1 ${
-                  room?.refundable
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
-                {room?.refundable ? "Yes" : "No"}
+              <p className="font-bold text-gray-900 mt-1">
+                {typeof room?.refundable ===
+                "boolean"
+                  ? room.refundable
+                    ? "Yes"
+                    : "No"
+                  : "-"}
               </p>
             </div>
 
@@ -544,7 +696,9 @@ export default function HotelConfirmationPage() {
               </p>
 
               <p className="font-bold text-gray-900 mt-1">
-                {formatDate(stay?.checkIn)}
+                {formatDate(
+                  stay?.checkIn
+                )}
               </p>
             </div>
 
@@ -554,7 +708,9 @@ export default function HotelConfirmationPage() {
               </p>
 
               <p className="font-bold text-gray-900 mt-1">
-                {formatDate(stay?.checkOut)}
+                {formatDate(
+                  stay?.checkOut
+                )}
               </p>
             </div>
           </div>
@@ -617,7 +773,7 @@ export default function HotelConfirmationPage() {
         <section className="bg-white rounded-xl shadow mt-6 overflow-hidden">
           <div className="px-6 py-5 border-b">
             <h2 className="text-xl font-bold text-gray-900">
-              💳 Payment Details
+              💳 Payment Record
             </h2>
           </div>
 
@@ -639,7 +795,10 @@ export default function HotelConfirmationPage() {
                 </span>
 
                 <span className="font-semibold text-gray-900">
-                  ₹{formatMoney(convenienceFee)}
+                  ₹
+                  {formatMoney(
+                    convenienceFee
+                  )}
                 </span>
               </div>
 
@@ -688,44 +847,70 @@ export default function HotelConfirmationPage() {
                   </p>
                 </div>
               )}
+
+              {providerConfirmationId && (
+                <div>
+                  <p className="text-sm text-gray-500">
+                    Provider Confirmation ID
+                  </p>
+
+                  <p className="font-semibold text-gray-900 break-all mt-1">
+                    {providerConfirmationId}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </section>
 
         {/* BOOKING STATUS */}
 
-        <div className="bg-green-50 border border-green-200 rounded-xl mt-6 p-5">
-          <h3 className="font-bold text-green-700">
-            ✅ Booking Status
-          </h3>
+        {bookingConfirmed ? (
+          <div className="bg-green-50 border border-green-200 rounded-xl mt-6 p-5">
+            <h3 className="font-bold text-green-700">
+              ✅ Provider Booking Confirmed
+            </h3>
 
-          <p className="text-green-700 mt-2">
-            Payment confirmed. Hotel booking transaction successfully recorded.
-          </p>
-        </div>
+            <p className="text-green-700 mt-2">
+              Authorized provider confirmation
+              उपलब्ध है।
+            </p>
+          </div>
+        ) : (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl mt-6 p-5">
+            <h3 className="font-bold text-amber-800">
+              ⚠️ Hotel Booking Not Confirmed
+            </h3>
 
-        {/* DEMO NOTICE */}
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl mt-4 p-5">
-          <h3 className="font-bold text-yellow-700">
-            महत्वपूर्ण सूचना
-          </h3>
-
-          <p className="text-yellow-700 mt-2 text-sm">
-            अभी यह demo hotel booking system transaction और payment confirmation रिकॉर्ड कर रहा है। वास्तविक hotel provider confirmation / booking ID API integration के बाद generate होगी।
-          </p>
-        </div>
+            <p className="text-amber-800 mt-2">
+              Verified provider booking
+              confirmation उपलब्ध नहीं है। इसलिए
+              यह page Hotel booking ticket या
+              confirmed voucher नहीं है।
+            </p>
+          </div>
+        )}
 
         {/* ACTIONS */}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold"
-          >
-            🖨️ Print Booking
-          </button>
+        <div
+          className={`grid grid-cols-1 ${
+            bookingConfirmed
+              ? "md:grid-cols-3"
+              : "md:grid-cols-2"
+          } gap-4 mt-6`}
+        >
+          {bookingConfirmed && (
+            <button
+              type="button"
+              onClick={() =>
+                window.print()
+              }
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold"
+            >
+              🖨️ Print Confirmed Booking
+            </button>
+          )}
 
           <Link
             href="/service2/hotel"
@@ -736,18 +921,20 @@ export default function HotelConfirmationPage() {
 
           <button
             type="button"
-            onClick={() => router.push("/history")}
+            onClick={() =>
+              router.push("/history")
+            }
             className="bg-gray-800 hover:bg-gray-900 text-white px-6 py-3 rounded-lg font-bold"
           >
             Transaction History
           </button>
         </div>
 
-        {/* CREATED AT */}
-
         <p className="text-center text-sm text-gray-500 mt-6">
           Transaction created:{" "}
-          {formatDateTime(transaction.createdAt)}
+          {formatDateTime(
+            transaction.createdAt
+          )}
         </p>
       </div>
     </main>

@@ -544,10 +544,20 @@ function FlightDetailsContent() {
           </h1>
 
           <p className="text-gray-600 mt-2">
-            Flight select करें और passenger details भरें।
+            Demo flight details review करें और passenger details भरें।
           </p>
 
         </div>
+        <div className="mt-5 bg-amber-50 border border-amber-200 rounded-xl p-5">
+  <p className="font-bold text-amber-800">
+    Demo / Setup Mode
+  </p>
+
+  <p className="text-sm text-amber-800 mt-1">
+    Flight timing, seat availability, refundable status और fare अभी demo data हैं।
+    ये live airline inventory, final fare या confirmed availability नहीं हैं।
+  </p>
+</div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -595,8 +605,8 @@ function FlightDetailsContent() {
                     }`}
                   >
                     {refundable
-                      ? "Refundable"
-                      : "Non-refundable"}
+                      ? "Demo: Refundable"
+                      : "Demo: Non-refundable"}
                   </span>
 
                 </div>
@@ -685,7 +695,7 @@ function FlightDetailsContent() {
                 <div>
 
                   <p className="text-sm text-gray-500">
-                    Seats Available
+                    Demo Seats
                   </p>
 
                   <p className="font-bold text-gray-900 mt-1">
@@ -889,7 +899,7 @@ function FlightDetailsContent() {
             <section className="bg-white rounded-xl shadow p-6 lg:sticky lg:top-6">
 
               <h2 className="text-xl font-bold text-gray-900">
-                💳 Fare Summary
+                💳 Demo Fare Summary
               </h2>
 
               <div className="mt-6 space-y-4">
@@ -897,7 +907,7 @@ function FlightDetailsContent() {
                 <div className="flex justify-between gap-5">
 
                   <span className="text-gray-600">
-                    Base Fare
+                    Demo Base Fare
                   </span>
 
                   <span className="font-semibold">
@@ -912,7 +922,7 @@ function FlightDetailsContent() {
                 <div className="flex justify-between gap-5">
 
                   <span className="text-gray-600">
-                    Taxes
+                    Demo Taxes
                   </span>
 
                   <span className="font-semibold">
@@ -927,7 +937,7 @@ function FlightDetailsContent() {
                 <div className="flex justify-between gap-5">
 
                   <span className="text-gray-600">
-                    Convenience Fee
+                    Demo Convenience Fee
                   </span>
 
                   <span className="font-semibold">
@@ -942,7 +952,7 @@ function FlightDetailsContent() {
                 <div className="border-t pt-4 flex justify-between gap-5">
 
                   <span className="text-xl font-bold text-gray-900">
-                    Total
+                    Demo Total
                   </span>
 
                   <span className="text-2xl font-bold text-blue-600">
@@ -963,7 +973,7 @@ function FlightDetailsContent() {
                 }
                 className="w-full mt-6 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold"
               >
-                Continue to Payment →
+                Review & Continue →
               </button>
 
               <Link

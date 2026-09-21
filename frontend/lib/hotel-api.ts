@@ -637,8 +637,18 @@ class DemoHotelProvider
       );
   }
 
-  // ====================================================
+    // ====================================================
   // BOOKING
+  // ====================================================
+  //
+  // Demo provider केवल search और availability preview
+  // के लिए है.
+  //
+  // यह method कभी भी fake confirmation ID या
+  // CONFIRMED booking return नहीं करेगी.
+  //
+  // Live booking केवल authorized Hotel provider
+  // integration के बाद implement की जाएगी.
   // ====================================================
 
   async createBooking(
@@ -648,79 +658,10 @@ class DemoHotelProvider
       demoRooms.find(
         (item) =>
           item.roomId ===
-          request.roomId
+            request.roomId &&
+          item.hotelId ===
+            request.hotelId
       );
-
-    if (!room) {
-      return {
-        provider:
-          "DEMO_HOTEL_PROVIDER",
-
-        confirmationId:
-          null,
-
-        status:
-          "FAILED",
-
-        hotel: {
-          hotelId:
-            request.hotelId,
-
-          hotelName:
-            request.hotelName,
-
-          city:
-            request.city,
-
-          location:
-            request.location,
-        },
-
-        room: {
-          roomId:
-            request.roomId,
-
-          roomType:
-            request.roomType,
-
-          mealPlan:
-            request.mealPlan,
-        },
-
-        stay: {
-          checkIn:
-            request.checkIn,
-
-          checkOut:
-            request.checkOut,
-
-          guests:
-            request.guests,
-
-          rooms:
-            request.rooms,
-
-          nights: 0,
-        },
-
-        amount: {
-          pricePerNight:
-            0,
-
-          roomFare:
-            0,
-
-          convenienceFee:
-            0,
-
-          totalAmount:
-            0,
-
-          currency:
-            "INR",
-        },
-      };
-    }
 
     const nights =
       calculateNights(
@@ -728,33 +669,39 @@ class DemoHotelProvider
         request.checkOut
       );
 
+    const validNights =
+      nights > 0 ? nights : 0;
+
+    const pricePerNight =
+      room?.pricePerNight || 0;
+
     const roomFare =
-      room.pricePerNight *
-      nights *
-      request.rooms;
+      room && validNights > 0
+        ? pricePerNight *
+          validNights *
+          request.rooms
+        : 0;
 
     const convenienceFee =
-      50;
+      room && validNights > 0
+        ? 50
+        : 0;
 
     const totalAmount =
       roomFare +
       convenienceFee;
 
-    // ----------------------------------------------
-    // Demo confirmation
-    // ----------------------------------------------
-
-    const confirmationId =
-      `DEMO-HOTEL-${Date.now()}`;
+    // IMPORTANT:
+    // Demo provider must NEVER create a fake
+    // confirmed Hotel booking.
 
     return {
       provider:
         "DEMO_HOTEL_PROVIDER",
 
-      confirmationId,
+      confirmationId: null,
 
-      status:
-        "CONFIRMED",
+      status: "FAILED",
 
       hotel: {
         hotelId:
@@ -772,13 +719,15 @@ class DemoHotelProvider
 
       room: {
         roomId:
-          room.roomId,
+          request.roomId,
 
         roomType:
-          room.roomType,
+          room?.roomType ||
+          request.roomType,
 
         mealPlan:
-          room.mealPlan,
+          room?.mealPlan ||
+          request.mealPlan,
       },
 
       stay: {
@@ -794,12 +743,12 @@ class DemoHotelProvider
         rooms:
           request.rooms,
 
-        nights,
+        nights:
+          validNights,
       },
 
       amount: {
-        pricePerNight:
-          room.pricePerNight,
+        pricePerNight,
 
         roomFare,
 
@@ -808,7 +757,8 @@ class DemoHotelProvider
         totalAmount,
 
         currency:
-          room.currency,
+          room?.currency ||
+          "INR",
       },
     };
   }

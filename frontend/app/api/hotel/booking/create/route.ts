@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-
-import {
-  getHotelProvider,
-  type HotelAvailabilityRequest,
-} from "@/lib/hotel-api";
+import { hotelProvider } from "@/lib/providers/travel/provider";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 type BookingBody = {
   hotelId?: unknown;
@@ -43,30 +39,7 @@ function isValidDate(value: string) {
   return !Number.isNaN(date.getTime());
 }
 
-function calculateNights(
-  checkIn: string,
-  checkOut: string
-) {
-  const start = new Date(
-    `${checkIn}T00:00:00`
-  );
-
-  const end = new Date(
-    `${checkOut}T00:00:00`
-  );
-
-  const difference =
-    end.getTime() - start.getTime();
-
-  return Math.ceil(
-    difference /
-      (1000 * 60 * 60 * 24)
-  );
-}
-
-export async function POST(
-  request: Request
-) {
+export async function POST(request: Request) {
   try {
     // ==================================================
     // LOGIN CHECK
@@ -106,112 +79,50 @@ export async function POST(
       );
     }
 
-    const hotelId =
-      String(body.hotelId ?? "").trim();
+    const hotelId = String(body.hotelId ?? "").trim();
+    const hotelName = String(body.hotelName ?? "").trim();
+    const city = String(body.city ?? "").trim();
+    const location = String(body.location ?? "").trim();
 
-    const hotelName =
-      String(body.hotelName ?? "").trim();
+    const roomId = String(body.roomId ?? "").trim();
+    const roomType = String(body.roomType ?? "").trim();
 
-    const city =
-      String(body.city ?? "").trim();
+    const checkIn = String(body.checkIn ?? "").trim();
+    const checkOut = String(body.checkOut ?? "").trim();
 
-    const location =
-      String(body.location ?? "").trim();
+    const guests = Number(body.guests);
+    const rooms = Number(body.rooms);
 
-    const roomId =
-      String(body.roomId ?? "").trim();
-
-    const roomType =
-      String(body.roomType ?? "").trim();
-
-    const mealPlan =
-      String(body.mealPlan ?? "").trim();
-
-    const checkIn =
-      String(body.checkIn ?? "").trim();
-
-    const checkOut =
-      String(body.checkOut ?? "").trim();
-
-    const guests =
-      Number(body.guests);
-
-    const rooms =
-      Number(body.rooms);
-
-    const guestName =
-      String(body.guestName ?? "").trim();
-
-    const guestAge =
-      Number(body.guestAge);
-
-    const guestGender =
-      String(body.guestGender ?? "").trim();
-
-    const guestMobile =
-      String(body.guestMobile ?? "").trim();
+    const guestName = String(body.guestName ?? "").trim();
+    const guestAge = Number(body.guestAge);
+    const guestGender = String(body.guestGender ?? "").trim();
+    const guestMobile = String(body.guestMobile ?? "").trim();
 
     // ==================================================
-    // VALIDATION
+    // BASIC VALIDATION
     // ==================================================
 
-    if (!hotelId) {
+    if (!hotelId || !hotelName || !city || !location) {
       return NextResponse.json(
         {
           success: false,
-          message: "Hotel ID is required.",
+          message: "Hotel details पूरी नहीं हैं।",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    if (!hotelName) {
+    if (!roomId || !roomType) {
       return NextResponse.json(
         {
           success: false,
-          message: "Hotel name is required.",
+          message: "Room details पूरी नहीं हैं।",
         },
-        { status: 400 }
-      );
-    }
-
-    if (!city) {
-      return NextResponse.json(
         {
-          success: false,
-          message: "Hotel city is required.",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!location) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Hotel location is required.",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!roomId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Room ID is required.",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!roomType) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Room type is required.",
-        },
-        { status: 400 }
+          status: 400,
+        }
       );
     }
 
@@ -221,7 +132,9 @@ export async function POST(
           success: false,
           message: "Valid check-in date is required.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -231,7 +144,9 @@ export async function POST(
           success: false,
           message: "Valid check-out date is required.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -242,7 +157,9 @@ export async function POST(
           message:
             "Check-out date must be after check-in date.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -254,10 +171,11 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Guests must be between 1 and 20.",
+          message: "Guests must be between 1 and 20.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -269,10 +187,11 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Rooms must be between 1 and 10.",
+          message: "Rooms must be between 1 and 10.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -282,7 +201,9 @@ export async function POST(
           success: false,
           message: "Guest name is required.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -294,410 +215,127 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Valid guest age is required.",
+          message: "Valid guest age is required.",
         },
-        { status: 400 }
-      );
-    }
-
-    if (!guestGender) {
-      return NextResponse.json(
         {
-          success: false,
-          message: "Guest gender is required.",
-        },
-        { status: 400 }
+          status: 400,
+        }
       );
     }
 
     if (
-      !/^[0-9]{10}$/.test(
-        guestMobile
+      !["MALE", "FEMALE", "OTHER"].includes(
+        guestGender.toUpperCase()
       )
     ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Valid guest gender is required.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (!/^[0-9]{10}$/.test(guestMobile)) {
       return NextResponse.json(
         {
           success: false,
           message:
             "Valid 10-digit guest mobile is required.",
         },
-        { status: 400 }
-      );
-    }
-
-    // ==================================================
-    // NIGHTS
-    // ==================================================
-
-    const nights = calculateNights(
-      checkIn,
-      checkOut
-    );
-
-    if (nights < 1) {
-      return NextResponse.json(
         {
-          success: false,
-          message:
-            "Booking must be at least 1 night.",
-        },
-        { status: 400 }
-      );
-    }
-
-    // ==================================================
-    // HOTEL PROVIDER
-    // ==================================================
-
-    const provider =
-      getHotelProvider();
-
-    console.log(
-      "HOTEL BOOKING PROVIDER:",
-      provider.constructor.name
-    );
-
-    // ==================================================
-    // SERVER-SIDE AVAILABILITY CHECK
-    // ==================================================
-
-    const availabilityRequest: HotelAvailabilityRequest = {
-      hotelId,
-      checkIn,
-      checkOut,
-      guests,
-      rooms,
-    };
-
-    const availableRooms =
-      await provider.getAvailability(
-        availabilityRequest
-      );
-
-    // ==================================================
-    // SELECTED ROOM VERIFY
-    // ==================================================
-
-    const selectedRoom =
-      availableRooms.find(
-        (room) =>
-          room.roomId === roomId
-      );
-
-    if (!selectedRoom) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Selected room अभी available नहीं है। कृपया room दोबारा select करें।",
-        },
-        { status: 409 }
-      );
-    }
-
-    // ==================================================
-    // ROOM TYPE VERIFY
-    // ==================================================
-
-    if (
-      selectedRoom.roomType !==
-      roomType
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Selected room details बदल गई हैं। कृपया room दोबारा select करें।",
-        },
-        { status: 409 }
-      );
-    }
-
-    // ==================================================
-    // MEAL PLAN VERIFY
-    // ==================================================
-
-    if (
-      mealPlan &&
-      selectedRoom.mealPlan !==
-        mealPlan
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Selected meal plan बदल गया है। कृपया room दोबारा select करें।",
-        },
-        { status: 409 }
-      );
-    }
-
-    // ==================================================
-    // CAPACITY VERIFY
-    // ==================================================
-
-    if (
-      selectedRoom.maxGuests <
-      guests
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Selected room requested guests के लिए पर्याप्त नहीं है।",
-        },
-        { status: 400 }
-      );
-    }
-
-    // ==================================================
-    // SERVER-SIDE PRICE
-    // ==================================================
-
-    const roomFare =
-      selectedRoom.roomFare;
-
-    const convenienceFee = 50;
-
-    const totalAmount =
-      roomFare +
-      convenienceFee;
-
-    // ==================================================
-    // TRANSACTION ID
-    // ==================================================
-
-    const transactionId =
-      `HOTEL-${Date.now()}-${Math.floor(
-        1000 +
-          Math.random() * 9000
-      )}`;
-
-    // ==================================================
-    // BOOKING DATA
-    // ==================================================
-
-    const bookingData = {
-      bookingType:
-        "HOTEL_BOOKING",
-
-      hotel: {
-        hotelId,
-        hotelName,
-        city,
-        location,
-      },
-
-      room: {
-        roomId:
-          selectedRoom.roomId,
-
-        roomType:
-          selectedRoom.roomType,
-
-        mealPlan:
-          selectedRoom.mealPlan,
-
-        refundable:
-          selectedRoom.refundable,
-
-        maxGuests:
-          selectedRoom.maxGuests,
-      },
-
-      stay: {
-        checkIn,
-        checkOut,
-        guests,
-        rooms,
-        nights,
-      },
-
-      guest: {
-        name:
-          guestName,
-
-        age:
-          guestAge,
-
-        gender:
-          guestGender,
-
-        mobile:
-          guestMobile,
-      },
-
-      payment: {
-        pricePerNight:
-          selectedRoom.pricePerNight,
-
-        roomFare,
-
-        convenienceFee,
-
-        totalAmount,
-
-        currency:
-          selectedRoom.currency,
-      },
-
-      provider: {
-        mode:
-          process.env.HOTEL_API_PROVIDER ||
-          "demo",
-
-        confirmationId:
-          null,
-
-        bookingStatus:
-          "PENDING",
-      },
-    };
-
-    // ==================================================
-    // SAVE DESCRIPTION
-    // ==================================================
-
-    const description =
-      JSON.stringify(
-        bookingData
-      );
-
-    // ==================================================
-    // CREATE TRANSACTION
-    // ==================================================
-
-    const transaction =
-      await prisma.transaction.create(
-        {
-          data: {
-            userId:
-              user.id,
-
-            transactionId,
-
-            service:
-              "HOTEL_BOOKING",
-
-            category:
-              "TRAVEL",
-
-            description,
-
-            amount:
-              totalAmount,
-
-            status:
-              "PENDING",
-
-            referenceId:
-              hotelId,
-
-            provider:
-              hotelName,
-
-            updatedAt:
-              new Date(),
-          },
-
-          select: {
-            id: true,
-            transactionId:
-              true,
-            service:
-              true,
-            category:
-              true,
-            description:
-              true,
-            amount:
-              true,
-            status:
-              true,
-            referenceId:
-              true,
-            provider:
-              true,
-            createdAt:
-              true,
-          },
+          status: 400,
         }
       );
+    }
 
     // ==================================================
-    // RESPONSE
+    // COMMON TRAVEL PROVIDER SAFETY CHECK
+    // ==================================================
+
+    const providerHealth =
+      await hotelProvider.healthCheck();
+
+    const providerReady =
+      providerHealth.success === true &&
+      providerHealth.data?.configured === true &&
+      providerHealth.data?.available === true &&
+      providerHealth.data?.status === "ACTIVE";
+
+    // ==================================================
+    // PROVIDER NOT ACTIVE
+    // IMPORTANT:
+    // No transaction is created.
+    // No Razorpay order is created.
+    // ==================================================
+
+    if (!providerReady) {
+      return NextResponse.json(
+        {
+          success: false,
+
+          errorCode:
+            "HOTEL_PROVIDER_NOT_ACTIVE",
+
+          message:
+            "Hotel booking provider अभी active नहीं है। इसलिए transaction और payment शुरू नहीं किया गया है।",
+
+          provider: {
+            configured:
+              providerHealth.data?.configured ??
+              false,
+
+            available:
+              providerHealth.data?.available ??
+              false,
+
+            status:
+              providerHealth.data?.status ??
+              "NOT_CONFIGURED",
+          },
+        },
+        {
+          status: 503,
+        }
+      );
+    }
+
+    // ==================================================
+    // LIVE HOTEL WORKFLOW NOT IMPLEMENTED
+    //
+    // Even if registry is changed to ACTIVE,
+    // payment must not start until the authorized
+    // provider booking workflow is implemented.
     // ==================================================
 
     return NextResponse.json(
       {
-        success: true,
+        success: false,
+
+        errorCode:
+          "HOTEL_WORKFLOW_NOT_IMPLEMENTED",
 
         message:
-          "Hotel booking transaction created successfully.",
-
-        provider:
-          process.env.HOTEL_API_PROVIDER ||
-          "demo",
-
-        transaction: {
-          id:
-            transaction.id,
-
-          transactionId:
-            transaction.transactionId,
-
-          service:
-            transaction.service,
-
-          category:
-            transaction.category,
-
-          description:
-            transaction.description,
-
-          amount:
-            transaction.amount.toString(),
-
-          status:
-            transaction.status,
-
-          referenceId:
-            transaction.referenceId,
-
-          provider:
-            transaction.provider,
-
-          createdAt:
-            transaction.createdAt.toISOString(),
-        },
-
-        booking:
-          bookingData,
+          "Hotel provider active है, लेकिन live hotel booking workflow अभी implement नहीं हुआ है। इसलिए transaction और payment शुरू नहीं किया गया है।",
       },
       {
-        status: 201,
+        status: 503,
       }
     );
   } catch (error) {
     console.error(
-      "================================="
-    );
-
-    console.error(
       "HOTEL BOOKING CREATE API ERROR:",
       error
-    );
-
-    console.error(
-      "================================="
     );
 
     return NextResponse.json(
       {
         success: false,
         message:
-          "Hotel booking create नहीं हो सकी। Please try again.",
+          "Hotel booking request process नहीं हो सकी। Please try again.",
       },
       {
         status: 500,
