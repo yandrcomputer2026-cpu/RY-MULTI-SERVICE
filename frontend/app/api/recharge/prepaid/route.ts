@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { prepaidRechargeProvider } from "@/lib/providers/recharge/provider";
 
 export const runtime = "nodejs";
 
@@ -215,6 +216,35 @@ export async function POST(request: Request) {
         }
       );
     }
+    // ==================================================
+// PROVIDER SAFETY CHECK
+// ==================================================
+
+const providerHealth =
+  await prepaidRechargeProvider.healthCheck();
+
+const health =
+  providerHealth.data;
+
+const providerReady =
+  providerHealth.success === true &&
+  health?.configured === true &&
+  health?.available === true &&
+  health?.status === "ACTIVE";
+
+if (!providerReady) {
+  return NextResponse.json(
+    {
+      success: false,
+      errorCode: "RECHARGE_PROVIDER_NOT_ACTIVE",
+      message:
+        "Mobile Prepaid provider अभी active नहीं है। इसलिए transaction और payment शुरू नहीं किया गया है।",
+    },
+    {
+      status: 503,
+    }
+  );
+}
 
     // ==================================================
     // UNIQUE TRANSACTION ID

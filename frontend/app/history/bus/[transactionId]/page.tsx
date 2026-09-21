@@ -41,10 +41,6 @@ type BusBookingDescription = {
   };
 };
 
-// ==================================================
-// HELPERS
-// ==================================================
-
 function formatMoney(value?: string | number | null) {
   const amount = Number(value ?? 0);
 
@@ -97,6 +93,15 @@ function formatDateTime(value?: Date | string) {
   });
 }
 
+function formatStatus(status: string) {
+  return status
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (char) =>
+      char.toUpperCase()
+    );
+}
+
 function parseDescription(
   description?: string | null
 ): BusBookingDescription {
@@ -106,22 +111,18 @@ function parseDescription(
 
   const value = description.trim();
 
-  // पुराने Bus transactions में plain-text description हो सकता है.
-  // इसलिए केवल JSON object दिखने पर ही parse करेंगे.
   if (!value.startsWith("{")) {
     return {};
   }
 
   try {
-    return JSON.parse(value) as BusBookingDescription;
+    return JSON.parse(
+      value
+    ) as BusBookingDescription;
   } catch {
     return {};
   }
 }
-
-// ==================================================
-// PAGE
-// ==================================================
 
 export default async function BusHistoryTicketPage({
   params,
@@ -150,10 +151,6 @@ export default async function BusHistoryTicketPage({
       },
     });
 
-  // ==================================================
-  // NOT FOUND
-  // ==================================================
-
   if (!transaction) {
     return (
       <main className="min-h-screen bg-gray-100 px-6 py-12">
@@ -168,7 +165,8 @@ export default async function BusHistoryTicketPage({
             </h1>
 
             <p className="mt-2 text-gray-600">
-              यह booking उपलब्ध नहीं है या आपके account से संबंधित नहीं है।
+              यह booking उपलब्ध नहीं है या आपके
+              account से संबंधित नहीं है।
             </p>
 
             <Link
@@ -183,84 +181,61 @@ export default async function BusHistoryTicketPage({
     );
   }
 
-  // ==================================================
-  // DESCRIPTION
-  // ==================================================
-
   const details =
     parseDescription(
       transaction.description
     );
 
-  const bus =
-    details.bus;
-
-  const passenger =
-    details.passenger;
-
-  const payment =
-    details.payment;
-
-  // ==================================================
-  // STATUS
-  // ==================================================
+  const bus = details.bus;
+  const passenger = details.passenger;
+  const payment = details.payment;
 
   const status =
     String(
       transaction.status || "PENDING"
     ).toUpperCase();
 
-  const isSuccess =
-    status === "SUCCESS";
-
   const isFailed =
-    status === "FAILED";
+    status === "FAILED" ||
+    status === "CANCELLED";
 
-  // ==================================================
-  // AMOUNT
-  // ==================================================
+  const isTransactionSuccess =
+    status === "SUCCESS";
 
   const totalAmount =
     payment?.totalAmount ??
-    Number(
-      transaction.amount || 0
-    );
-
-  // ==================================================
-  // OLD DATA CHECK
-  // ==================================================
+    Number(transaction.amount || 0);
 
   const hasBusDetails =
     Boolean(
       bus?.busId ||
-      bus?.operator ||
-      bus?.busType ||
-      bus?.from ||
-      bus?.to ||
-      bus?.journeyDate ||
-      bus?.departure ||
-      bus?.arrival ||
-      bus?.duration
+        bus?.operator ||
+        bus?.busType ||
+        bus?.from ||
+        bus?.to ||
+        bus?.journeyDate ||
+        bus?.departure ||
+        bus?.arrival ||
+        bus?.duration
     );
 
   const hasPassengerDetails =
     Boolean(
       passenger?.name ||
-      passenger?.age ||
-      passenger?.gender ||
-      passenger?.mobile ||
-      passenger?.seatNumber
+        passenger?.age ||
+        passenger?.gender ||
+        passenger?.mobile ||
+        passenger?.seatNumber
     );
 
-  // ==================================================
-  // UI
-  // ==================================================
+  const hasPaymentReference =
+    Boolean(
+      transaction.razorpayPaymentId ||
+        transaction.razorpayOrderId
+    );
 
   return (
     <main className="min-h-screen bg-gray-100">
-
-      {/* ================= HEADER ================= */}
-
       <header className="bg-white px-6 py-4 shadow-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <Link
@@ -289,61 +264,57 @@ export default async function BusHistoryTicketPage({
       </header>
 
       <div className="mx-auto max-w-5xl px-6 py-10">
-
-        {/* ================= TITLE ================= */}
-
         <div className="mb-6 text-center">
           <p className="text-sm font-bold text-blue-600">
             RY MULTI SERVICE
           </p>
 
           <h1 className="mt-2 text-3xl font-bold text-gray-900">
-            🚌 Bus Booking
+            🚌 Bus Booking Details
           </h1>
 
           <p className="mt-2 text-gray-500">
-            आपकी bus booking details
+            Transaction और journey details
           </p>
         </div>
 
-        {/* ================= STATUS ================= */}
-
         <div
           className={`rounded-xl border p-6 ${
-            isSuccess
-              ? "border-green-200 bg-green-50"
-              : isFailed
+            isFailed
               ? "border-red-200 bg-red-50"
-              : "border-yellow-200 bg-yellow-50"
+              : isTransactionSuccess
+                ? "border-green-200 bg-green-50"
+                : "border-yellow-200 bg-yellow-50"
           }`}
         >
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div>
               <h2
                 className={`text-xl font-bold ${
-                  isSuccess
-                    ? "text-green-700"
-                    : isFailed
+                  isFailed
                     ? "text-red-700"
-                    : "text-yellow-700"
+                    : isTransactionSuccess
+                      ? "text-green-700"
+                      : "text-yellow-700"
                 }`}
               >
-                Booking {status}{" "}
-                {isSuccess
-                  ? "✅"
-                  : isFailed
-                  ? "❌"
-                  : "⏳"}
+                Transaction Status:{" "}
+                {formatStatus(status)}
               </h2>
 
+              <p className="mt-2 max-w-2xl text-sm text-gray-600">
+                यह status transaction record को
+                दर्शाता है। इसे confirmed bus
+                booking या issued ticket का प्रमाण
+                न मानें।
+              </p>
+
               <p className="mt-4 text-sm text-gray-500">
-                Booking ID
+                Transaction ID
               </p>
 
               <p className="mt-1 break-all font-bold text-gray-900">
-                {
-                  transaction.transactionId
-                }
+                {transaction.transactionId}
               </p>
             </div>
 
@@ -352,34 +323,45 @@ export default async function BusHistoryTicketPage({
                 Reference ID
               </p>
 
-              <p className="mt-1 font-bold text-gray-900">
-                {
-                  transaction.referenceId ||
+              <p className="mt-1 break-all font-bold text-gray-900">
+                {transaction.referenceId ||
                   bus?.busId ||
-                  "-"
-                }
+                  "-"}
               </p>
             </div>
           </div>
         </div>
 
-        {/* ================= OLD DATA NOTE ================= */}
+        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
+          <p className="font-semibold text-amber-800">
+            ⚠️ Booking Confirmation
+          </p>
+
+          <p className="mt-2 text-sm leading-6 text-amber-700">
+            इस record में verified bus-provider
+            booking confirmation या provider-issued
+            ticket उपलब्ध नहीं है। इसलिए यह page
+            केवल booking request / transaction
+            details दिखाता है, confirmed bus ticket
+            नहीं।
+          </p>
+        </div>
 
         {!hasBusDetails &&
           !hasPassengerDetails && (
             <div className="mt-6 rounded-xl border border-yellow-200 bg-yellow-50 p-5">
               <p className="font-semibold text-yellow-800">
-                पुराने Bus transaction की detailed booking information उपलब्ध नहीं है।
+                पुराने Bus transaction की detailed
+                information उपलब्ध नहीं है।
               </p>
 
               <p className="mt-2 text-sm text-yellow-700">
-                इस transaction में description पुराने plain-text format में save हुआ था।
-                नई Bus bookings में पूरी Bus और Passenger details दिखाई देंगी।
+                इस transaction में description
+                पुराने plain-text format में save
+                हुआ था।
               </p>
             </div>
           )}
-
-        {/* ================= BUS DETAILS ================= */}
 
         <section className="mt-6 overflow-hidden rounded-xl bg-white shadow">
           <div className="border-b px-6 py-5">
@@ -389,17 +371,13 @@ export default async function BusHistoryTicketPage({
           </div>
 
           <div className="grid grid-cols-1 gap-x-10 gap-y-6 p-6 md:grid-cols-2 lg:grid-cols-3">
-
             <div>
               <p className="text-sm text-gray-500">
                 Operator
               </p>
 
               <p className="mt-1 font-bold text-gray-900">
-                {
-                  bus?.operator ||
-                  "-"
-                }
+                {bus?.operator || "-"}
               </p>
             </div>
 
@@ -408,12 +386,10 @@ export default async function BusHistoryTicketPage({
                 Bus ID
               </p>
 
-              <p className="mt-1 font-bold text-gray-900">
-                {
-                  bus?.busId ||
+              <p className="mt-1 break-all font-bold text-gray-900">
+                {bus?.busId ||
                   transaction.referenceId ||
-                  "-"
-                }
+                  "-"}
               </p>
             </div>
 
@@ -423,10 +399,7 @@ export default async function BusHistoryTicketPage({
               </p>
 
               <p className="mt-1 font-bold text-gray-900">
-                {
-                  bus?.busType ||
-                  "-"
-                }
+                {bus?.busType || "-"}
               </p>
             </div>
 
@@ -436,10 +409,7 @@ export default async function BusHistoryTicketPage({
               </p>
 
               <p className="mt-1 font-bold text-gray-900">
-                {
-                  bus?.from ||
-                  "-"
-                }
+                {bus?.from || "-"}
               </p>
             </div>
 
@@ -449,10 +419,7 @@ export default async function BusHistoryTicketPage({
               </p>
 
               <p className="mt-1 font-bold text-gray-900">
-                {
-                  bus?.to ||
-                  "-"
-                }
+                {bus?.to || "-"}
               </p>
             </div>
 
@@ -462,11 +429,9 @@ export default async function BusHistoryTicketPage({
               </p>
 
               <p className="mt-1 font-bold text-gray-900">
-                {
-                  formatDate(
-                    bus?.journeyDate
-                  )
-                }
+                {formatDate(
+                  bus?.journeyDate
+                )}
               </p>
             </div>
 
@@ -476,10 +441,7 @@ export default async function BusHistoryTicketPage({
               </p>
 
               <p className="mt-1 font-bold text-gray-900">
-                {
-                  bus?.departure ||
-                  "-"
-                }
+                {bus?.departure || "-"}
               </p>
             </div>
 
@@ -489,10 +451,7 @@ export default async function BusHistoryTicketPage({
               </p>
 
               <p className="mt-1 font-bold text-gray-900">
-                {
-                  bus?.arrival ||
-                  "-"
-                }
+                {bus?.arrival || "-"}
               </p>
             </div>
 
@@ -502,16 +461,11 @@ export default async function BusHistoryTicketPage({
               </p>
 
               <p className="mt-1 font-bold text-gray-900">
-                {
-                  bus?.duration ||
-                  "-"
-                }
+                {bus?.duration || "-"}
               </p>
             </div>
           </div>
         </section>
-
-        {/* ================= PASSENGER DETAILS ================= */}
 
         <section className="mt-6 overflow-hidden rounded-xl bg-white shadow">
           <div className="border-b px-6 py-5">
@@ -521,17 +475,13 @@ export default async function BusHistoryTicketPage({
           </div>
 
           <div className="grid grid-cols-1 gap-x-10 gap-y-6 p-6 md:grid-cols-2 lg:grid-cols-3">
-
             <div>
               <p className="text-sm text-gray-500">
                 Passenger Name
               </p>
 
               <p className="mt-1 font-bold text-gray-900">
-                {
-                  passenger?.name ||
-                  "-"
-                }
+                {passenger?.name || "-"}
               </p>
             </div>
 
@@ -541,10 +491,7 @@ export default async function BusHistoryTicketPage({
               </p>
 
               <p className="mt-1 font-bold text-gray-900">
-                {
-                  passenger?.age ??
-                  "-"
-                }
+                {passenger?.age ?? "-"}
               </p>
             </div>
 
@@ -554,10 +501,7 @@ export default async function BusHistoryTicketPage({
               </p>
 
               <p className="mt-1 font-bold text-gray-900">
-                {
-                  passenger?.gender ||
-                  "-"
-                }
+                {passenger?.gender || "-"}
               </p>
             </div>
 
@@ -567,10 +511,7 @@ export default async function BusHistoryTicketPage({
               </p>
 
               <p className="mt-1 font-bold text-gray-900">
-                {
-                  passenger?.mobile ||
-                  "-"
-                }
+                {passenger?.mobile || "-"}
               </p>
             </div>
 
@@ -580,66 +521,54 @@ export default async function BusHistoryTicketPage({
               </p>
 
               <p className="mt-1 font-bold text-blue-700">
-                {
-                  passenger?.seatNumber ||
-                  "-"
-                }
+                {passenger?.seatNumber || "-"}
               </p>
             </div>
           </div>
         </section>
 
-        {/* ================= FARE DETAILS ================= */}
-
         <section className="mt-6 overflow-hidden rounded-xl bg-white shadow">
           <div className="border-b px-6 py-5">
             <h2 className="text-xl font-bold text-gray-900">
-              💳 Fare Details
+              💳 Amount Details
             </h2>
           </div>
 
           <div className="p-6">
-
             <div className="flex justify-between gap-6">
               <span className="text-xl font-bold text-gray-900">
-                Total Paid
+                Transaction Amount
               </span>
 
               <span className="text-2xl font-bold text-blue-600">
-                ₹
-                {
-                  formatMoney(
-                    totalAmount
-                  )
-                }
+                ₹{formatMoney(totalAmount)}
               </span>
             </div>
 
-            <div className="mt-6 grid grid-cols-1 gap-6 border-t pt-6 md:grid-cols-2">
+            <p className="mt-3 text-sm leading-6 text-gray-500">
+              {hasPaymentReference
+                ? "Payment reference इस transaction में मौजूद है, लेकिन bus booking confirmation अलग provider verification पर निर्भर करती है।"
+                : "Payment reference उपलब्ध नहीं है। यह amount केवल transaction record में दर्ज amount है।"}
+            </p>
 
+            <div className="mt-6 grid grid-cols-1 gap-6 border-t pt-6 md:grid-cols-2">
               <div>
                 <p className="text-sm text-gray-500">
                   Currency
                 </p>
 
                 <p className="mt-1 font-semibold text-gray-900">
-                  {
-                    payment?.currency ||
-                    "INR"
-                  }
+                  {payment?.currency || "INR"}
                 </p>
               </div>
 
               <div>
                 <p className="text-sm text-gray-500">
-                  Payment Provider
+                  Provider
                 </p>
 
                 <p className="mt-1 font-semibold text-gray-900">
-                  {
-                    transaction.provider ||
-                    "-"
-                  }
+                  {transaction.provider || "-"}
                 </p>
               </div>
 
@@ -650,9 +579,7 @@ export default async function BusHistoryTicketPage({
                   </p>
 
                   <p className="mt-1 break-all font-semibold text-gray-900">
-                    {
-                      transaction.razorpayOrderId
-                    }
+                    {transaction.razorpayOrderId}
                   </p>
                 </div>
               )}
@@ -664,34 +591,27 @@ export default async function BusHistoryTicketPage({
                   </p>
 
                   <p className="mt-1 break-all font-semibold text-gray-900">
-                    {
-                      transaction.razorpayPaymentId
-                    }
+                    {transaction.razorpayPaymentId}
                   </p>
                 </div>
               )}
 
               <div>
                 <p className="text-sm text-gray-500">
-                  Booking Date
+                  Transaction Date
                 </p>
 
                 <p className="mt-1 font-semibold text-gray-900">
-                  {
-                    formatDateTime(
-                      transaction.createdAt
-                    )
-                  }
+                  {formatDateTime(
+                    transaction.createdAt
+                  )}
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ================= ACTIONS ================= */}
-
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-
           <Link
             href="/history"
             className="rounded-lg bg-gray-800 px-6 py-3 text-center font-bold text-white hover:bg-gray-900"
@@ -703,7 +623,7 @@ export default async function BusHistoryTicketPage({
             href="/service2/bus"
             className="rounded-lg bg-blue-600 px-6 py-3 text-center font-bold text-white hover:bg-blue-700"
           >
-            🚌 Book Another Bus
+            🚌 Search Buses
           </Link>
         </div>
       </div>

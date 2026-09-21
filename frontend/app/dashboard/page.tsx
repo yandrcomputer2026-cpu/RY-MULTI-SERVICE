@@ -112,7 +112,7 @@ export default async function DashboardPage() {
           Mobile Prepaid
         </p>
         <p className="text-xs text-gray-400">
-          Test / Provider Pending
+          Test / Provider Pending 
         </p>
       </div>
     </Link>
@@ -241,8 +241,8 @@ export default async function DashboardPage() {
         <p className="font-semibold">
           UPI Cash
         </p>
-        <p className="text-xs text-gray-400">
-          QR Payment
+        <p className="text-xs text-amber-500">
+          Provider Setup
         </p>
       </div>
     </Link>
@@ -621,7 +621,7 @@ export default async function DashboardPage() {
             </div>
 
             <span className="text-sm font-semibold text-gray-500">
-              ACTIVE SERVICES
+              AVAILABLE SERVICES
             </span>
           </div>
 

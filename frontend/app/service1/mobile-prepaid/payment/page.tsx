@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useRef, useState } from "react";
 
 declare global {
@@ -23,6 +23,10 @@ function PaymentPageContent() {
   const [rechargeSuccess, setRechargeSuccess] = useState(false);
 
   const paymentVerifiedRef = useRef(false);
+
+  // ======================================================
+  // LOAD RAZORPAY
+  // ======================================================
 
   async function loadRazorpayScript(): Promise<boolean> {
     if (typeof window === "undefined") {
@@ -73,6 +77,10 @@ function PaymentPageContent() {
     });
   }
 
+  // ======================================================
+  // PAYMENT
+  // ======================================================
+
   async function handlePayment() {
     if (!transactionId || !amount) {
       setError("Payment details नहीं मिलीं।");
@@ -88,6 +96,60 @@ function PaymentPageContent() {
     setMessage("");
 
     try {
+      // ==================================================
+      // PROVIDER STATUS CHECK
+      //
+      // IMPORTANT:
+      // Provider ACTIVE होने से पहले Razorpay order
+      // या payment शुरू नहीं होना चाहिए.
+      // ==================================================
+
+      const statusResponse = await fetch(
+        "/api/internal/recharge/status",
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      const statusData =
+        await statusResponse.json();
+
+      if (
+        !statusResponse.ok ||
+        !statusData.success
+      ) {
+        setError(
+          statusData.message ||
+            "Recharge provider status check नहीं हो पाया।"
+        );
+
+        setLoading(false);
+        return;
+      }
+
+      const prepaidProvider =
+        statusData.services?.mobilePrepaid;
+
+      const providerReady =
+        prepaidProvider?.success === true &&
+        prepaidProvider?.data?.configured === true &&
+        prepaidProvider?.data?.available === true &&
+        prepaidProvider?.data?.status === "ACTIVE";
+
+      if (!providerReady) {
+        setError(
+          "Mobile Prepaid provider अभी active नहीं है। इसलिए payment शुरू नहीं किया गया है।"
+        );
+
+        setLoading(false);
+        return;
+      }
+
+      // ==================================================
+      // LOAD RAZORPAY ONLY AFTER PROVIDER CHECK
+      // ==================================================
+
       const razorpayLoaded =
         await loadRazorpayScript();
 
@@ -95,17 +157,24 @@ function PaymentPageContent() {
         setError(
           "Razorpay Checkout load नहीं हो पाया। कृपया internet connection check करें।"
         );
+
         setLoading(false);
         return;
       }
+
+      // ==================================================
+      // CREATE RAZORPAY ORDER
+      // ==================================================
 
       const orderResponse = await fetch(
         "/api/payment/order",
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             transactionId,
           }),
@@ -146,6 +215,10 @@ function PaymentPageContent() {
         return;
       }
 
+      // ==================================================
+      // RAZORPAY OPTIONS
+      // ==================================================
+
       const options = {
         key: orderData.keyId,
 
@@ -176,6 +249,10 @@ function PaymentPageContent() {
           color: "#2563eb",
         },
 
+        // ==================================================
+        // RAZORPAY PAYMENT RESPONSE
+        // ==================================================
+
         handler: async function (
           response: any
         ) {
@@ -189,6 +266,10 @@ function PaymentPageContent() {
             );
 
             setError("");
+
+            // ==============================================
+            // VERIFY PAYMENT
+            // ==============================================
 
             const verifyResponse =
               await fetch(
@@ -232,14 +313,21 @@ function PaymentPageContent() {
               return;
             }
 
+            // Payment verified.
+            // This does NOT mean recharge is successful.
+
             paymentVerifiedRef.current = true;
 
             setPaid(true);
             setError("");
 
             setMessage(
-              "Payment verified successfully. Recharge process किया जा रहा है..."
+              "Payment verified successfully. Recharge provider confirmation का इंतजार किया जा रहा है..."
             );
+
+            // ==============================================
+            // PROCESS RECHARGE
+            // ==============================================
 
             const rechargeResponse =
               await fetch(
@@ -267,16 +355,24 @@ function PaymentPageContent() {
             ) {
               setError(
                 rechargeData.message ||
-                  "Payment successful, लेकिन recharge failed."
+                  "Payment verified है, लेकिन recharge अभी complete नहीं हुआ।"
               );
 
               setMessage(
-                "Payment successful है, लेकिन recharge अभी complete नहीं हुआ।"
+                "Payment verified है, लेकिन recharge provider से successful confirmation नहीं मिला है।"
               );
 
               setLoading(false);
               return;
             }
+
+            // ==============================================
+            // RECHARGE SUCCESS
+            //
+            // This branch should only be reached when the
+            // backend provider workflow has verified the
+            // actual recharge as successful.
+            // ==============================================
 
             setRechargeSuccess(true);
             setError("");
@@ -293,7 +389,7 @@ function PaymentPageContent() {
             );
 
             setError(
-              "Payment verify या recharge process में समस्या हुई।"
+              "Payment verification या recharge processing में समस्या हुई।"
             );
 
             setLoading(false);
@@ -315,6 +411,10 @@ function PaymentPageContent() {
           },
         },
       };
+
+      // ==================================================
+      // OPEN RAZORPAY
+      // ==================================================
 
       const razorpay =
         new window.Razorpay(options);
@@ -355,6 +455,10 @@ function PaymentPageContent() {
     }
   }
 
+  // ======================================================
+  // INVALID PAYMENT DATA
+  // ======================================================
+
   if (!transactionId || !amount) {
     return (
       <main className="min-h-screen bg-gray-100 flex items-center justify-center px-6">
@@ -384,6 +488,10 @@ function PaymentPageContent() {
       </main>
     );
   }
+
+  // ======================================================
+  // PAGE
+  // ======================================================
 
   return (
     <main className="min-h-screen bg-gray-100">
@@ -455,7 +563,7 @@ function PaymentPageContent() {
             <div className="mt-6 bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
 
               <p className="font-semibold">
-                Payment Error
+                Payment / Recharge Status
               </p>
 
               <p className="mt-1">
@@ -477,7 +585,7 @@ function PaymentPageContent() {
               <p className="font-bold">
                 {rechargeSuccess
                   ? "Recharge Successful"
-                  : "Payment Successful"}
+                  : "Payment Verified"}
               </p>
 
               <p className="mt-2">
@@ -486,7 +594,7 @@ function PaymentPageContent() {
 
               {!rechargeSuccess && (
                 <p className="text-sm mt-2">
-                  कृपया इस page को बंद न करें...
+                  Recharge को successful तभी माना जाएगा जब provider से verified confirmation मिले।
                 </p>
               )}
 
@@ -501,7 +609,7 @@ function PaymentPageContent() {
               className="w-full mt-8 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-lg transition"
             >
               {loading
-                ? "Processing Payment..."
+                ? "Checking Provider..."
                 : `Pay ₹${Number(amount).toFixed(2)} →`}
             </button>
           )}
@@ -510,13 +618,11 @@ function PaymentPageContent() {
             <button
               type="button"
               onClick={() =>
-                router.push(
-                  "/service1/mobile-prepaid"
-                )
+                router.push("/history")
               }
               className="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg"
             >
-              वापस Recharge Page पर जाएँ
+              History देखें
             </button>
           )}
 
@@ -526,13 +632,11 @@ function PaymentPageContent() {
               <button
                 type="button"
                 onClick={() =>
-                  router.push(
-                    "/service1/mobile-prepaid"
-                  )
+                  router.push("/history")
                 }
                 className="w-full mt-8 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 rounded-lg"
               >
-                Recharge Page पर जाएँ
+                Transaction History देखें
               </button>
             )}
 
@@ -571,6 +675,7 @@ export default function PaymentPage() {
       fallback={
         <main className="min-h-screen bg-gray-100 flex items-center justify-center">
           <div className="bg-white rounded-xl shadow p-8 text-center">
+
             <h2 className="text-xl font-bold text-gray-900">
               Payment Page
             </h2>
@@ -578,6 +683,7 @@ export default function PaymentPage() {
             <p className="text-gray-500 mt-2">
               Payment details load हो रही हैं...
             </p>
+
           </div>
         </main>
       }

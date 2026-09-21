@@ -148,6 +148,46 @@ function DthPaymentContent() {
     setMessage("");
 
     try {
+            // ==================================================
+      // CHECK DTH PROVIDER BEFORE PAYMENT
+      // ==================================================
+
+      const statusResponse =
+        await fetch(
+          "/api/internal/recharge/status",
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
+
+      const statusData =
+        await readJsonResponse(
+          statusResponse
+        );
+
+      const dthProvider =
+        statusData?.services?.dth;
+
+      const providerReady =
+        statusResponse.ok &&
+        statusData?.success === true &&
+        dthProvider?.success === true &&
+        dthProvider?.data?.configured === true &&
+        dthProvider?.data?.available === true &&
+        dthProvider?.data?.status === "ACTIVE";
+
+      if (!providerReady) {
+        setError(
+          dthProvider?.data?.message ||
+            dthProvider?.message ||
+            statusData?.message ||
+            "DTH provider अभी active नहीं है। इसलिए payment शुरू नहीं किया गया है।"
+        );
+
+        setLoading(false);
+        return;
+      }
       // ==================================================
       // LOAD RAZORPAY
       // ==================================================
@@ -715,7 +755,7 @@ function DthPaymentContent() {
               }
               className="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg"
             >
-              Dashboard पर जाएँ
+              Service 1 पर जाएँ
             </button>
           )}
 

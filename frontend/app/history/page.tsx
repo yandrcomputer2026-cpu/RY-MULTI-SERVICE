@@ -441,24 +441,6 @@ function getStatusClasses(status: string) {
   return "bg-yellow-100 text-yellow-700";
 }
 
-function isSuccessStatus(status: string) {
-  const normalizedStatus =
-    status.toUpperCase();
-
-  return (
-    normalizedStatus === "SUCCESS" ||
-    normalizedStatus ===
-      "RECHARGE_SUCCESS" ||
-    normalizedStatus ===
-      "POSTPAID_SUCCESS" ||
-    normalizedStatus ===
-      "DTH_SUCCESS" ||
-    normalizedStatus ===
-      "ELECTRICITY_SUCCESS" ||
-    normalizedStatus ===
-      "FASTAG_SUCCESS"
-  );
-}
 
 function isPendingStatus(status: string) {
   const normalizedStatus =
@@ -601,22 +583,19 @@ export default async function HistoryPage() {
                 );
 
                 const status = String(
-                  transaction.status ||
-                    "PENDING"
-                ).toUpperCase();
+  transaction.status ||
+    "PENDING"
+).toUpperCase();
 
-                const isSuccess =
-                  isSuccessStatus(status);
+const isPending =
+  isPendingStatus(status);
 
-                const isPending =
-                  isPendingStatus(status);
+const isFailed =
+  isFailedStatus(status);
 
-                const isFailed =
-                  isFailedStatus(status);
-
-                const amount = Number(
-                  transaction.amount
-                );
+const amount = Number(
+  transaction.amount
+);
 
                 const providerFallback =
                   transaction.provider &&
@@ -1548,93 +1527,47 @@ export default async function HistoryPage() {
                           </Link>
                         )}
 
-                      {transaction.service ===
-                        "TRAIN_BOOKING" &&
-                        isSuccess && (
-                          <Link
-                            href={`/history/train/${transaction.transactionId}`}
-                            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-                          >
-                            🎫 View Train Ticket
-                          </Link>
-                        )}
+                                            {/* TRAVEL HISTORY ACTIONS */}
 
                       {transaction.service ===
-                        "FLIGHT_BOOKING" &&
-                        isSuccess && (
-                          <Link
-                            href={`/history/flight/${transaction.transactionId}`}
-                            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-                          >
-                            ✈️ View Flight Ticket
-                          </Link>
-                        )}
+                        "TRAIN_BOOKING" && (
+                        <Link
+                          href={`/history/train/${transaction.transactionId}`}
+                          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                        >
+                          🚆 View Train Details
+                        </Link>
+                      )}
 
                       {transaction.service ===
-                        "BUS_BOOKING" &&
-                        isSuccess && (
-                          <Link
-                            href={`/history/bus/${transaction.transactionId}`}
-                            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-                          >
-                            🚌 View Bus Ticket
-                          </Link>
-                        )}
+                        "FLIGHT_BOOKING" && (
+                        <Link
+                          href={`/history/flight/${transaction.transactionId}`}
+                          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                        >
+                          ✈️ View Flight Details
+                        </Link>
+                      )}
 
                       {transaction.service ===
-                        "BUS_BOOKING" &&
-                        isPending && (
-                          <>
-                            <Link
-                              href={`/service2/bus/payment?transactionId=${encodeURIComponent(
-                                transaction.transactionId
-                              )}&amount=${encodeURIComponent(
-                                Number.isFinite(
-                                  amount
-                                )
-                                  ? String(
-                                      amount
-                                    )
-                                  : "0"
-                              )}`}
-                              className="rounded-lg bg-yellow-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-yellow-600"
-                            >
-                              💳 Complete
-                              Payment
-                            </Link>
-
-                            <Link
-                              href={`/history/bus/${transaction.transactionId}`}
-                              className="rounded-lg border border-blue-300 px-5 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
-                            >
-                              🚌 View Bus
-                              Details
-                            </Link>
-                          </>
-                        )}
+                        "BUS_BOOKING" && (
+                        <Link
+                          href={`/history/bus/${transaction.transactionId}`}
+                          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                        >
+                          🚌 View Bus Details
+                        </Link>
+                      )}
 
                       {transaction.service ===
-                        "BUS_BOOKING" &&
-                        isFailed && (
-                          <Link
-                            href="/service2/bus"
-                            className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
-                          >
-                            ↻ Book Bus Again
-                          </Link>
-                        )}
-
-                      {transaction.service ===
-                        "HOTEL_BOOKING" &&
-                        isSuccess && (
-                          <Link
-                            href={`/history/hotel/${transaction.transactionId}`}
-                            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-                          >
-                            🏨 View Hotel
-                            Booking
-                          </Link>
-                        )}
+                        "HOTEL_BOOKING" && (
+                        <Link
+                          href={`/history/hotel/${transaction.transactionId}`}
+                          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                        >
+                          🏨 View Hotel Details
+                        </Link>
+                      )}
 
                       <Link
                         href="/dashboard"

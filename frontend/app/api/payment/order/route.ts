@@ -2,6 +2,15 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Razorpay from "razorpay";
+import {
+  prepaidRechargeProvider,
+  dthRechargeProvider,
+} from "@/lib/providers/recharge/provider";
+
+import {
+  mobilePostpaidProvider,
+  electricityProvider,
+} from "@/lib/providers/bbps/provider";
 
 export async function POST(request: Request) {
   try {
@@ -83,6 +92,103 @@ export async function POST(request: Request) {
           message: `Transaction is already ${transaction.status}.`,
         },
         { status: 400 }
+      );
+    }
+        // ================= SERVICE PROVIDER CHECK =================
+    //
+    // Razorpay order must not be created or reused unless
+    // the actual service provider is currently available.
+    // Payment readiness and service readiness are separate.
+    // ==========================================================
+
+    let providerHealth = null;
+
+    if (transaction.service === "MOBILE_PREPAID") {
+      providerHealth =
+        await prepaidRechargeProvider.healthCheck();
+    } else if (
+      transaction.service === "DTH_RECHARGE"
+    ) {
+      providerHealth =
+        await dthRechargeProvider.healthCheck();
+    } else if (
+  transaction.service === "MOBILE_POSTPAID"
+) {
+  providerHealth =
+    await mobilePostpaidProvider.healthCheck();
+} else if (
+  transaction.service === "ELECTRICITY_BILL"
+) {
+  providerHealth =
+    await electricityProvider.healthCheck();
+} else {
+      console.warn(
+        "RAZORPAY ORDER BLOCKED - UNSUPPORTED SERVICE:",
+        {
+          transactionId:
+            transaction.transactionId,
+          service: transaction.service,
+        }
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+          errorCode:
+            "PAYMENT_SERVICE_NOT_SUPPORTED",
+          message:
+            "इस service के लिए payment अभी enabled नहीं है।",
+        },
+        { status: 400 }
+      );
+    }
+
+    const providerReady =
+      providerHealth.success === true &&
+      providerHealth.data?.configured === true &&
+      providerHealth.data?.available === true &&
+      providerHealth.data?.status === "ACTIVE";
+
+    if (!providerReady) {
+      console.warn(
+        "RAZORPAY ORDER BLOCKED - SERVICE PROVIDER NOT ACTIVE:",
+        {
+          transactionId:
+            transaction.transactionId,
+          service: transaction.service,
+          providerStatus:
+            providerHealth.data?.status,
+        }
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+          errorCode:
+            "SERVICE_PROVIDER_NOT_ACTIVE",
+
+          message:
+            "Service provider अभी active नहीं है। इसलिए payment शुरू नहीं किया गया है।",
+
+          provider: {
+            configured:
+              providerHealth.data?.configured ??
+              false,
+
+            available:
+              providerHealth.data?.available ??
+              false,
+
+            status:
+              providerHealth.data?.status ??
+              "ERROR",
+
+            message:
+              providerHealth.data?.message ||
+              providerHealth.message,
+          },
+        },
+        { status: 503 }
       );
     }
 

@@ -148,6 +148,46 @@ function ElectricityPaymentContent() {
     setMessage("");
 
     try {
+            // ==================================================
+      // CHECK ELECTRICITY PROVIDER BEFORE PAYMENT
+      // ==================================================
+
+      const statusResponse =
+        await fetch(
+          "/api/internal/bbps/status",
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
+
+      const statusData =
+        await readJsonResponse(
+          statusResponse
+        );
+
+      const electricityProvider =
+        statusData?.services?.electricity;
+
+      const providerReady =
+        statusResponse.ok &&
+        statusData?.success === true &&
+        electricityProvider?.success === true &&
+        electricityProvider?.data?.configured === true &&
+        electricityProvider?.data?.available === true &&
+        electricityProvider?.data?.status === "ACTIVE";
+
+      if (!providerReady) {
+        setError(
+          electricityProvider?.data?.message ||
+            electricityProvider?.message ||
+            statusData?.message ||
+            "Electricity BBPS provider अभी active नहीं है। इसलिए payment शुरू नहीं किया गया है।"
+        );
+
+        setLoading(false);
+        return;
+      }
       // ==================================================
       // LOAD RAZORPAY
       // ==================================================
@@ -715,7 +755,7 @@ function ElectricityPaymentContent() {
               }
               className="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg"
             >
-              Service 1 पर जाएँ
+              Dashboard पर जाएँ
             </button>
           )}
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import { dthRechargeProvider } from "@/lib/providers/recharge/provider";
 
 export const runtime = "nodejs";
 
@@ -215,6 +216,66 @@ export async function POST(request: Request) {
         },
         {
           status: 400,
+        }
+      );
+    }
+        // ==================================================
+    // RECHARGE PROVIDER SERVER-SIDE CHECK
+    //
+    // Frontend check alone is not enough.
+    // Direct API calls must not create a transaction
+    // while the DTH provider is unavailable.
+    // ==================================================
+
+    const providerHealth =
+      await dthRechargeProvider.healthCheck();
+
+    const providerReady =
+      providerHealth.success === true &&
+      providerHealth.data?.configured === true &&
+      providerHealth.data?.available === true &&
+      providerHealth.data?.status === "ACTIVE";
+
+    if (!providerReady) {
+      console.warn(
+        "DTH CREATE BLOCKED - RECHARGE PROVIDER NOT ACTIVE:",
+        {
+          userId: user.id,
+          providerStatus:
+            providerHealth.data?.status,
+        }
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+
+          message:
+            "DTH provider अभी active नहीं है। इसलिए transaction और payment शुरू नहीं किया गया है।",
+
+          errorCode:
+            "DTH_PROVIDER_NOT_ACTIVE",
+
+          provider: {
+            configured:
+              providerHealth.data?.configured ??
+              false,
+
+            available:
+              providerHealth.data?.available ??
+              false,
+
+            status:
+              providerHealth.data?.status ??
+              "ERROR",
+
+            message:
+              providerHealth.data?.message ||
+              providerHealth.message,
+          },
+        },
+        {
+          status: 503,
         }
       );
     }

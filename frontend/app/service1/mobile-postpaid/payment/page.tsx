@@ -150,6 +150,46 @@ function MobilePostpaidPaymentContent() {
     setMessage("");
 
     try {
+            // ==================================================
+      // CHECK MOBILE POSTPAID PROVIDER BEFORE PAYMENT
+      // ==================================================
+
+      const statusResponse =
+        await fetch(
+          "/api/internal/bbps/status",
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
+
+      const statusData =
+        await readJsonResponse(
+          statusResponse
+        );
+
+      const postpaidProvider =
+        statusData?.services?.mobilePostpaid;
+
+      const providerReady =
+        statusResponse.ok &&
+        statusData?.success === true &&
+        postpaidProvider?.success === true &&
+        postpaidProvider?.data?.configured === true &&
+        postpaidProvider?.data?.available === true &&
+        postpaidProvider?.data?.status === "ACTIVE";
+
+      if (!providerReady) {
+        setError(
+          postpaidProvider?.data?.message ||
+            postpaidProvider?.message ||
+            statusData?.message ||
+            "Mobile Postpaid BBPS provider अभी active नहीं है। इसलिए payment शुरू नहीं किया गया है।"
+        );
+
+        setLoading(false);
+        return;
+      }
       // ==================================================
       // LOAD RAZORPAY
       // ==================================================

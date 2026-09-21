@@ -63,6 +63,45 @@ type PageProps = {
   }>;
 };
 
+function formatStatus(status: string) {
+  return status
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function getTransactionStatusClasses(status: string) {
+  const normalizedStatus = status.toUpperCase();
+
+  if (normalizedStatus === "SUCCESS") {
+    return {
+      wrapper: "border-green-200 bg-green-50",
+      heading: "text-green-800",
+      text: "text-green-700",
+      value: "text-green-900",
+    };
+  }
+
+  if (
+    normalizedStatus === "FAILED" ||
+    normalizedStatus === "CANCELLED"
+  ) {
+    return {
+      wrapper: "border-red-200 bg-red-50",
+      heading: "text-red-800",
+      text: "text-red-700",
+      value: "text-red-900",
+    };
+  }
+
+  return {
+    wrapper: "border-yellow-200 bg-yellow-50",
+    heading: "text-yellow-800",
+    text: "text-yellow-700",
+    value: "text-yellow-900",
+  };
+}
+
 export default async function FlightTicketPage({
   params,
 }: PageProps) {
@@ -142,19 +181,38 @@ export default async function FlightTicketPage({
   const convenienceFee =
     Number(payment.convenienceFee ?? 0);
 
+  const transactionAmount =
+    Number(transaction.amount);
+
   const totalAmount =
     Number(
       payment.totalAmount ??
-        transaction.amount
+        (Number.isFinite(transactionAmount)
+          ? transactionAmount
+          : 0)
     );
 
   const currency =
     payment.currency || "INR";
 
+  const status = String(
+    transaction.status || "PENDING"
+  ).toUpperCase();
+
+  const statusClasses =
+    getTransactionStatusClasses(status);
+
+  const paymentReference =
+    transaction.razorpayPaymentId ||
+    transaction.referenceId ||
+    "-";
+
+  const hasPaymentReference =
+    paymentReference !== "-";
+
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-8">
       <div className="mx-auto max-w-4xl">
-
         {/* HEADER */}
         <div className="mb-6 text-center">
           <p className="text-sm font-semibold text-blue-600">
@@ -162,43 +220,79 @@ export default async function FlightTicketPage({
           </p>
 
           <h1 className="mt-2 text-3xl font-bold text-gray-900">
-            ✈️ Flight Ticket
+            ✈️ Flight Booking Details
           </h1>
 
-          <p className="mt-2 text-sm text-green-600">
-            आपकी confirmed flight booking details
+          <p className="mt-2 text-sm text-gray-600">
+            Transaction और journey details
           </p>
         </div>
 
-        {/* SUCCESS CARD */}
-        <div className="rounded-2xl border border-green-200 bg-green-50 p-6">
-          <h2 className="text-xl font-bold text-green-800">
-            Booking {transaction.status} ✅
+        {/* TRANSACTION STATUS */}
+        <div
+          className={`rounded-2xl border p-6 ${statusClasses.wrapper}`}
+        >
+          <h2
+            className={`text-xl font-bold ${statusClasses.heading}`}
+          >
+            Transaction Status:{" "}
+            {formatStatus(status)}
           </h2>
+
+          <p
+            className={`mt-2 text-sm ${statusClasses.text}`}
+          >
+            यह status transaction record को
+            दर्शाता है। इसे confirmed flight
+            booking या issued ticket का प्रमाण
+            न मानें।
+          </p>
 
           <div className="mt-5 grid gap-5 md:grid-cols-2">
             <div>
-              <p className="text-xs text-green-700">
-                Booking ID
+              <p
+                className={`text-xs ${statusClasses.text}`}
+              >
+                Transaction ID
               </p>
 
-              <p className="mt-1 break-all font-bold text-green-900">
+              <p
+                className={`mt-1 break-all font-bold ${statusClasses.value}`}
+              >
                 {transaction.transactionId}
               </p>
             </div>
 
             <div>
-              <p className="text-xs text-green-700">
+              <p
+                className={`text-xs ${statusClasses.text}`}
+              >
                 Payment / Reference ID
               </p>
 
-              <p className="mt-1 break-all font-bold text-green-900">
-                {transaction.razorpayPaymentId ||
-                  transaction.referenceId ||
-                  "-"}
+              <p
+                className={`mt-1 break-all font-bold ${statusClasses.value}`}
+              >
+                {paymentReference}
               </p>
             </div>
           </div>
+        </div>
+
+        {/* BOOKING CONFIRMATION */}
+        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <p className="font-semibold text-amber-800">
+            ⚠️ Booking Confirmation
+          </p>
+
+          <p className="mt-2 text-sm leading-6 text-amber-700">
+            इस record में verified airline /
+            travel-provider booking confirmation
+            उपलब्ध नहीं है। इसलिए यह page केवल
+            booking request / transaction details
+            दिखाता है, confirmed flight ticket
+            नहीं।
+          </p>
         </div>
 
         {/* FLIGHT DETAILS */}
@@ -304,7 +398,7 @@ export default async function FlightTicketPage({
           </div>
         </div>
 
-        {/* JOURNEY / PASSENGER */}
+        {/* PASSENGER DETAILS */}
         <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
           <h2 className="text-xl font-bold text-gray-900">
             Passenger Details
@@ -365,10 +459,10 @@ export default async function FlightTicketPage({
           )}
         </div>
 
-        {/* FARE DETAILS */}
+        {/* AMOUNT DETAILS */}
         <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
           <h2 className="text-xl font-bold text-gray-900">
-            Fare Details
+            Amount Details
           </h2>
 
           <div className="mt-5 space-y-4">
@@ -404,10 +498,10 @@ export default async function FlightTicketPage({
 
             <div className="flex items-center justify-between pt-2">
               <span className="text-lg font-bold text-gray-900">
-                Total Paid
+                Transaction Amount
               </span>
 
-              <span className="text-3xl font-bold text-green-600">
+              <span className="text-3xl font-bold text-blue-600">
                 ₹{totalAmount}
               </span>
             </div>
@@ -415,13 +509,19 @@ export default async function FlightTicketPage({
             <p className="text-right text-xs text-gray-500">
               Currency: {currency}
             </p>
+
+            <p className="text-xs leading-5 text-gray-500">
+              {hasPaymentReference
+                ? "Payment/reference information इस transaction में मौजूद है, लेकिन flight booking confirmation अलग provider verification पर निर्भर करती है।"
+                : "Payment/reference ID उपलब्ध नहीं है। यह amount केवल transaction record में दर्ज amount है।"}
+            </p>
           </div>
         </div>
 
-        {/* PAYMENT INFO */}
+        {/* TRANSACTION INFORMATION */}
         <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
           <h2 className="font-bold text-gray-900">
-            Payment Information
+            Transaction Information
           </h2>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -437,7 +537,7 @@ export default async function FlightTicketPage({
 
             <div>
               <p className="text-xs text-gray-500">
-                Booking Date
+                Transaction Date
               </p>
 
               <p className="font-semibold text-gray-900">
@@ -462,10 +562,9 @@ export default async function FlightTicketPage({
             href="/service2/flight"
             className="w-full rounded-lg bg-blue-600 px-5 py-3 text-center font-semibold text-white hover:bg-blue-700"
           >
-            Book Another Flight →
+            Search Flights →
           </Link>
         </div>
-
       </div>
     </main>
   );

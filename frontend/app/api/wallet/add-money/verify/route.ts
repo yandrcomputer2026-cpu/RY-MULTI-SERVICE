@@ -1,8 +1,12 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
+import Razorpay from "razorpay";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
@@ -28,7 +32,9 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    const transactionId = String(body?.transactionId || "").trim();
+    const transactionId = String(
+      body?.transactionId || ""
+    ).trim();
 
     const razorpayOrderId = String(
       body?.razorpay_order_id || ""
@@ -51,32 +57,41 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Payment verification details incomplete हैं।",
+          message:
+            "Payment verification details incomplete हैं।",
         },
         { status: 400 }
       );
     }
 
     // ======================================================
-    // RAZORPAY SECRET
+    // RAZORPAY CONFIG
     // ======================================================
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret =
+      process.env.RAZORPAY_KEY_SECRET;
 
-    if (!keySecret) {
-      console.error("RAZORPAY_KEY_SECRET MISSING");
+    if (!keyId || !keySecret) {
+      console.error("RAZORPAY KEYS MISSING");
 
       return NextResponse.json(
         {
           success: false,
-          message: "Payment gateway configure नहीं है।",
+          message:
+            "Payment gateway configure नहीं है।",
         },
         { status: 500 }
       );
     }
 
+    const razorpay = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
+
     // ======================================================
-    // GET PENDING WALLET TRANSACTION
+    // GET WALLET TRANSACTION
     // ======================================================
 
     const walletTransaction =
@@ -90,18 +105,23 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Wallet transaction नहीं मिली।",
+          message:
+            "Wallet transaction नहीं मिली।",
         },
         { status: 404 }
       );
     }
 
-    // Transaction दूसरे user की नहीं होनी चाहिए
+    // ======================================================
+    // OWNERSHIP
+    // ======================================================
+
     if (walletTransaction.userId !== user.id) {
       return NextResponse.json(
         {
           success: false,
-          message: "Unauthorized transaction.",
+          message:
+            "Unauthorized transaction.",
         },
         { status: 403 }
       );
@@ -109,34 +129,44 @@ export async function POST(request: Request) {
 
     // ======================================================
     // IDEMPOTENCY
-    // पहले से SUCCESS है तो दोबारा balance credit नहीं होगा
     // ======================================================
 
     if (walletTransaction.status === "SUCCESS") {
-      const wallet = await prisma.wallet.findUnique({
-        where: {
-          id: walletTransaction.walletId,
-        },
-      });
+      const wallet =
+        await prisma.wallet.findUnique({
+          where: {
+            id: walletTransaction.walletId,
+          },
+        });
 
       return NextResponse.json({
         success: true,
         alreadyVerified: true,
-        message: "Payment पहले ही verify हो चुका है।",
+
+        message:
+          "Payment पहले ही verify हो चुका है।",
 
         wallet: wallet
           ? {
               availableBalance:
                 wallet.availableBalance.toString(),
+
               lockedBalance:
                 wallet.lockedBalance.toString(),
+
+              status: wallet.status,
             }
           : null,
 
         transaction: {
           transactionId:
             walletTransaction.transactionId,
-          status: walletTransaction.status,
+
+          amount:
+            walletTransaction.amount.toString(),
+
+          status:
+            walletTransaction.status,
         },
       });
     }
@@ -145,34 +175,34 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: `Transaction status ${walletTransaction.status} है।`,
+          message:
+            `Transaction status ${walletTransaction.status} है।`,
         },
         { status: 409 }
       );
     }
 
     // ======================================================
-    // ORDER ID MUST MATCH DATABASE
+    // DATABASE ORDER ID MUST MATCH
     // ======================================================
 
     if (
+      !walletTransaction.razorpayOrderId ||
       walletTransaction.razorpayOrderId !==
-      razorpayOrderId
+        razorpayOrderId
     ) {
       return NextResponse.json(
         {
           success: false,
-          message: "Razorpay order ID match नहीं हुई।",
+          message:
+            "Razorpay order ID match नहीं हुई।",
         },
         { status: 400 }
       );
     }
 
     // ======================================================
-    // VERIFY RAZORPAY SIGNATURE
-    //
-    // signature =
-    // HMAC_SHA256(order_id + "|" + payment_id, secret)
+    // VERIFY CHECKOUT SIGNATURE
     // ======================================================
 
     const expectedSignature = crypto
@@ -193,7 +223,8 @@ export async function POST(request: Request) {
     );
 
     const signatureValid =
-      expectedBuffer.length === receivedBuffer.length &&
+      expectedBuffer.length ===
+        receivedBuffer.length &&
       crypto.timingSafeEqual(
         expectedBuffer,
         receivedBuffer
@@ -203,28 +234,117 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Payment signature verification failed.",
+          message:
+            "Payment signature verification failed.",
         },
         { status: 400 }
       );
     }
 
     // ======================================================
+    // FETCH PAYMENT DIRECTLY FROM RAZORPAY
+    //
+    // Checkout response पर अकेले भरोसा नहीं करेंगे।
+    // Server Razorpay API से actual payment verify करेगा।
+    // ======================================================
+
+    const payment =
+      await razorpay.payments.fetch(
+        razorpayPaymentId
+      );
+
+    // ======================================================
+    // VERIFY PAYMENT -> ORDER RELATION
+    // ======================================================
+
+    if (payment.order_id !== razorpayOrderId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Payment संबंधित Razorpay order से match नहीं करती।",
+        },
+        { status: 400 }
+      );
+    }
+
+    // ======================================================
+    // VERIFY CURRENCY
+    // ======================================================
+
+    if (payment.currency !== "INR") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Payment currency invalid है।",
+        },
+        { status: 400 }
+      );
+    }
+
+    // ======================================================
+    // VERIFY EXACT AMOUNT
+    //
+    // DB amount = rupees
+    // Razorpay amount = paise
+    // ======================================================
+
+    const expectedAmountInPaise =
+      Math.round(
+        Number(walletTransaction.amount) * 100
+      );
+
+    const paidAmountInPaise =
+      Number(payment.amount);
+
+    if (
+      !Number.isFinite(paidAmountInPaise) ||
+      paidAmountInPaise !==
+        expectedAmountInPaise
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Payment amount transaction amount से match नहीं करती।",
+        },
+        { status: 400 }
+      );
+    }
+
+    // ======================================================
+    // VERIFY PAYMENT CAPTURED
+    //
+    // Wallet credit केवल captured payment पर होगा।
+    // ======================================================
+
+    if (
+      payment.status !== "captured" ||
+      payment.captured !== true
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Payment अभी successfully captured नहीं हुई है। Wallet credit नहीं किया गया।",
+        },
+        { status: 409 }
+      );
+    }
+
+    // ======================================================
     // ATOMIC WALLET CREDIT
     //
-    // 1. PENDING transaction को claim करें
-    // 2. Wallet balance increase करें
-    // 3. Ledger SUCCESS करें
+    // 1. PENDING transaction claim
+    // 2. Wallet credit
+    // 3. Ledger SUCCESS
     //
-    // पूरा operation एक database transaction में होगा।
+    // एक ही DB transaction में।
     // ======================================================
 
     const result = await prisma.$transaction(
       async (tx) => {
-        // --------------------------------------------------
-        // Claim transaction
-        // --------------------------------------------------
-
         const claimed =
           await tx.walletTransaction.updateMany({
             where: {
@@ -238,16 +358,15 @@ export async function POST(request: Request) {
             },
           });
 
-        // किसी दूसरे request ने पहले claim कर लिया
         if (claimed.count !== 1) {
           throw new Error(
             "WALLET_TRANSACTION_ALREADY_PROCESSED"
           );
         }
 
-        // --------------------------------------------------
-        // Current wallet
-        // --------------------------------------------------
+        // ==================================================
+        // CURRENT WALLET
+        // ==================================================
 
         const currentWallet =
           await tx.wallet.findUnique({
@@ -257,23 +376,29 @@ export async function POST(request: Request) {
           });
 
         if (!currentWallet) {
-          throw new Error("WALLET_NOT_FOUND");
+          throw new Error(
+            "WALLET_NOT_FOUND"
+          );
         }
 
         if (currentWallet.userId !== user.id) {
-          throw new Error("WALLET_USER_MISMATCH");
+          throw new Error(
+            "WALLET_USER_MISMATCH"
+          );
         }
 
         if (currentWallet.status !== "ACTIVE") {
-          throw new Error("WALLET_NOT_ACTIVE");
+          throw new Error(
+            "WALLET_NOT_ACTIVE"
+          );
         }
 
         const balanceBefore =
           currentWallet.availableBalance;
 
-        // --------------------------------------------------
+        // ==================================================
         // CREDIT WALLET
-        // --------------------------------------------------
+        // ==================================================
 
         const updatedWallet =
           await tx.wallet.update({
@@ -283,14 +408,15 @@ export async function POST(request: Request) {
 
             data: {
               availableBalance: {
-                increment: walletTransaction.amount,
+                increment:
+                  walletTransaction.amount,
               },
             },
           });
 
-        // --------------------------------------------------
+        // ==================================================
         // UPDATE LEDGER
-        // --------------------------------------------------
+        // ==================================================
 
         const updatedTransaction =
           await tx.walletTransaction.update({
@@ -307,15 +433,18 @@ export async function POST(request: Request) {
                 updatedWallet.availableBalance,
 
               razorpayPaymentId,
+
               razorpaySignature,
 
-              referenceId: razorpayPaymentId,
+              referenceId:
+                razorpayPaymentId,
             },
           });
 
         return {
           wallet: updatedWallet,
-          transaction: updatedTransaction,
+          transaction:
+            updatedTransaction,
         };
       }
     );
@@ -328,7 +457,7 @@ export async function POST(request: Request) {
       success: true,
 
       message:
-        "Payment verified और wallet balance successfully credit हो गया।",
+        "Payment Razorpay से verify हुई और wallet balance successfully credit हो गया।",
 
       wallet: {
         availableBalance:
@@ -337,7 +466,8 @@ export async function POST(request: Request) {
         lockedBalance:
           result.wallet.lockedBalance.toString(),
 
-        status: result.wallet.status,
+        status:
+          result.wallet.status,
       },
 
       transaction: {
@@ -386,12 +516,44 @@ export async function POST(request: Request) {
 
     if (
       error instanceof Error &&
-      error.message === "WALLET_NOT_ACTIVE"
+      error.message ===
+        "WALLET_NOT_ACTIVE"
     ) {
       return NextResponse.json(
         {
           success: false,
-          message: "Wallet अभी active नहीं है।",
+          message:
+            "Wallet अभी active नहीं है।",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (
+      error instanceof Error &&
+      error.message ===
+        "WALLET_NOT_FOUND"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Wallet नहीं मिला।",
+        },
+        { status: 404 }
+      );
+    }
+
+    if (
+      error instanceof Error &&
+      error.message ===
+        "WALLET_USER_MISMATCH"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Wallet ownership verification failed.",
         },
         { status: 403 }
       );
