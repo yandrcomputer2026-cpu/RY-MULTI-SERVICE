@@ -265,11 +265,21 @@ export default function FlightPage() {
           </h1>
 
           <p className="text-gray-600 mt-2">
-            Flight search करें और अपनी journey booking शुरू करें।
+            Demo flight search और booking flow review करें। Live booking authorized provider integration के बाद उपलब्ध होगी।
           </p>
 
         </div>
+<div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-5">
+  <p className="font-bold text-amber-800">
+    Demo / Setup Mode
+  </p>
 
+  <p className="text-sm text-amber-800 mt-1">
+    अभी दिखाई जाने वाली flights, timings, fares, seat counts और availability
+    demo provider data हो सकते हैं। इन्हें live airline inventory या confirmed
+    availability न मानें।
+  </p>
+</div>
         {/* SEARCH BOX */}
 
         <form
@@ -610,7 +620,7 @@ export default function FlightPage() {
           >
             {loading
               ? "Searching Flights..."
-              : "🔎 Search Flights"}
+              : "🔎 Search Demo Flights"}
           </button>
 
         </form>
@@ -626,7 +636,7 @@ export default function FlightPage() {
               </div>
 
               <p className="text-gray-600 mt-4">
-                Flights search हो रही हैं...
+                Demo Flights search हो रही हैं...
               </p>
             </div>
           )}
@@ -659,7 +669,7 @@ export default function FlightPage() {
 
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">
-                      Available Flights
+                      Demo Flight Options
                     </h2>
 
                     <p className="text-gray-500 mt-1">
@@ -668,7 +678,7 @@ export default function FlightPage() {
                       {to.toUpperCase()}
                       {" • "}
                       {flights.length}
-                      {" flights found"}
+                      {" demo options"}
                     </p>
                   </div>
 
@@ -761,7 +771,7 @@ export default function FlightPage() {
                         <div className="lg:text-right min-w-[150px]">
 
                           <p className="text-sm text-gray-500">
-                            Starting from
+                            Demo Fare
                           </p>
 
                           <p className="text-2xl font-bold text-gray-900">
@@ -772,7 +782,7 @@ export default function FlightPage() {
                           </p>
 
                           <p className="text-xs text-gray-500 mt-1">
-                            per passenger
+                            per passenger • not live fare
                           </p>
 
                           <button
@@ -867,8 +877,8 @@ export default function FlightPage() {
 
                         <span className="text-gray-600">
                           💺{" "}
-                          {flight.seatsAvailable}{" "}
-                          seats left
+                          Demo seats:{" "}
+{flight.seatsAvailable}
                         </span>
 
                         <span
