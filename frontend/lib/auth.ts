@@ -56,12 +56,13 @@ export async function getCurrentUser() {
     },
 
     select: {
-      id: true,
-      name: true,
-      email: true,
-      mobile: true,
-      role: true,
-    },
+  id: true,
+  userCode: true,
+  email: true,
+  mobile: true,
+  name: true,
+  role: true,
+},
   });
 
   // User database में नहीं है

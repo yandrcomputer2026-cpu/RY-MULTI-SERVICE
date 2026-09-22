@@ -16,14 +16,9 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    console.log("LOGIN BODY:", {
-      email: body?.email,
-      passwordReceived: !!body?.password,
-    });
-
-    const email =
-      typeof body?.email === "string"
-        ? body.email.trim().toLowerCase()
+    const identifier =
+      typeof body?.identifier === "string"
+        ? body.identifier.trim()
         : "";
 
     const password =
@@ -31,17 +26,21 @@ export async function POST(request: Request) {
         ? body.password
         : "";
 
+    console.log("LOGIN BODY:", {
+      identifier,
+      passwordReceived: !!password,
+    });
+
     // =========================================
     // 2. VALIDATION
     // =========================================
 
-    if (!email || !password) {
-      console.log("LOGIN VALIDATION FAILED");
-
+    if (!identifier || !password) {
       return NextResponse.json(
         {
           success: false,
-          message: "Email और Password भरना जरूरी है।",
+          message:
+            "User Code / Registered Mobile Number और Password भरना जरूरी है।",
         },
         {
           status: 400,
@@ -50,24 +49,47 @@ export async function POST(request: Request) {
     }
 
     // =========================================
-    // 3. FIND USER
+    // 3. NORMALIZE IDENTIFIER
     // =========================================
 
-    console.log("SEARCHING USER:", email);
+    // User code को uppercase रखें:
+    // ry100001 -> RY100001
+    const normalizedUserCode = identifier.toUpperCase();
 
-    const user = await prisma.user.findUnique({
+    // Mobile से spaces आदि हटाने की जरूरत नहीं,
+    // क्योंकि registered mobile 10 digits में save है.
+    const normalizedMobile = identifier.replace(/\D/g, "");
+
+    // =========================================
+    // 4. FIND USER BY USER CODE OR MOBILE
+    // =========================================
+
+    console.log("SEARCHING USER:", identifier);
+
+    const user = await prisma.user.findFirst({
       where: {
-        email: email,
+        OR: [
+          {
+            userCode: normalizedUserCode,
+          },
+          {
+            mobile: normalizedMobile,
+          },
+        ],
       },
     });
 
+    // =========================================
+    // 5. USER NOT FOUND
+    // =========================================
+
     if (!user) {
-      console.log("USER NOT FOUND:", email);
+      console.log("USER NOT FOUND:", identifier);
 
       return NextResponse.json(
         {
           success: false,
-          message: "Email या Password गलत है।",
+          message: "User Code / Mobile Number या Password गलत है।",
         },
         {
           status: 401,
@@ -77,15 +99,14 @@ export async function POST(request: Request) {
 
     console.log("USER FOUND:", {
       id: user.id,
-      email: user.email,
+      userCode: user.userCode,
+      mobile: user.mobile,
       name: user.name,
     });
 
     // =========================================
-    // 4. PASSWORD CHECK
+    // 6. PASSWORD CHECK
     // =========================================
-
-    console.log("CHECKING PASSWORD...");
 
     const passwordMatch = await bcrypt.compare(
       password,
@@ -98,7 +119,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Email या Password गलत है।",
+          message: "User Code / Mobile Number या Password गलत है।",
         },
         {
           status: 401,
@@ -109,44 +130,41 @@ export async function POST(request: Request) {
     console.log("PASSWORD MATCHED");
 
     // =========================================
-    // 5. CREATE SESSION
+    // 7. CREATE SESSION
     // =========================================
-
-    console.log("CREATING SESSION...");
 
     await createSession(user.id);
 
     console.log("SESSION CREATED SUCCESSFULLY");
 
     // =========================================
-    // 6. LOGIN SUCCESS
+    // 8. LOGIN SUCCESS
     // =========================================
 
-    console.log("LOGIN SUCCESS:", user.email);
+    console.log("LOGIN SUCCESS:", {
+      id: user.id,
+      userCode: user.userCode,
+    });
 
     return NextResponse.json(
       {
         success: true,
-
         message: "Login successfully हो गया।",
 
         user: {
           id: user.id,
+          userCode: user.userCode,
           name: user.name,
           mobile: user.mobile,
           email: user.email,
+          role: user.role,
         },
       },
       {
         status: 200,
       }
     );
-
   } catch (error) {
-    // =========================================
-    // SERVER ERROR
-    // =========================================
-
     console.error("=================================");
     console.error("LOGIN API ERROR");
     console.error("=================================");

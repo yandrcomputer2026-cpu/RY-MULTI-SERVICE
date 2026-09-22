@@ -40,6 +40,7 @@ enum UserRole {
 
 model user {
   id        Int      @id @default(autoincrement())
+  userCode  String?  @unique(map: "User_userCode_key")
   name      String
   email     String   @unique(map: "User_email_key")
   password  String
