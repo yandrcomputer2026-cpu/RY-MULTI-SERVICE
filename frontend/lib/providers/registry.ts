@@ -11,27 +11,47 @@ import type {
 /**
  * Central provider registry.
  *
- * External provider credentials मिलने के बाद
- * provider adapters यहाँ register किए जाएंगे.
- *
  * IMPORTANT:
  * API keys / secrets इस file में hard-code नहीं करने हैं.
+ *
+ * Provider Status:
+ * NOT_CONFIGURED = Provider setup नहीं हुआ
+ * TEST_MODE      = UAT / Sandbox testing
+ * ACTIVE         = Production / Live
+ * INACTIVE       = Temporarily disabled
+ * ERROR          = Provider problem
  */
+
 export const providerRegistry: ProviderConfig[] = [
+  // ====================================================
+  // PAY2ALL - RECHARGE
+  // ====================================================
   {
-    id: "recharge-provider",
-    name: "Recharge Provider",
-    status: "NOT_CONFIGURED",
-    services: ["MOBILE_PREPAID", "DTH"],
+    id: "pay2all-recharge",
+    name: "Pay2All",
+    status: "TEST_MODE",
+    services: [
+      "MOBILE_PREPAID",
+      "DTH",
+    ],
   },
 
+  // ====================================================
+  // BBPS
+  // ====================================================
   {
     id: "bbps-provider",
     name: "BBPS Provider",
     status: "NOT_CONFIGURED",
-    services: ["MOBILE_POSTPAID", "ELECTRICITY"],
+    services: [
+      "MOBILE_POSTPAID",
+      "ELECTRICITY",
+    ],
   },
 
+  // ====================================================
+  // FASTAG
+  // ====================================================
   {
     id: "fastag-provider",
     name: "FASTag Provider",
@@ -39,6 +59,9 @@ export const providerRegistry: ProviderConfig[] = [
     services: ["FASTAG"],
   },
 
+  // ====================================================
+  // BANKING
+  // ====================================================
   {
     id: "banking-provider",
     name: "Banking Provider",
@@ -51,6 +74,9 @@ export const providerRegistry: ProviderConfig[] = [
     ],
   },
 
+  // ====================================================
+  // TRAVEL
+  // ====================================================
   {
     id: "travel-provider",
     name: "Travel Provider",
@@ -78,7 +104,10 @@ export function getProviderForService(
 }
 
 /**
- * Service live processing के लिए available है या नहीं.
+ * Service LIVE production processing के लिए
+ * available है या नहीं.
+ *
+ * TEST_MODE को यहाँ ACTIVE नहीं माना जाएगा.
  */
 export function isServiceProviderActive(
   service: ServiceCategory,
@@ -86,6 +115,36 @@ export function isServiceProviderActive(
   const provider = getProviderForService(service);
 
   return provider?.status === "ACTIVE";
+}
+
+/**
+ * Service UAT / Sandbox testing के लिए
+ * available है या नहीं.
+ */
+export function isServiceProviderTestMode(
+  service: ServiceCategory,
+): boolean {
+  const provider = getProviderForService(service);
+
+  return provider?.status === "TEST_MODE";
+}
+
+/**
+ * Service किसी processing environment में
+ * available है या नहीं.
+ *
+ * TEST_MODE = UAT
+ * ACTIVE    = LIVE
+ */
+export function isServiceProviderAvailable(
+  service: ServiceCategory,
+): boolean {
+  const provider = getProviderForService(service);
+
+  return (
+    provider?.status === "TEST_MODE" ||
+    provider?.status === "ACTIVE"
+  );
 }
 
 /**

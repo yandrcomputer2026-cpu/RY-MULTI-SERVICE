@@ -85,6 +85,7 @@ export default function LoginPage() {
           name: string;
           mobile: string;
           email: string;
+          role: string;
         };
       };
 
@@ -120,8 +121,19 @@ export default function LoginPage() {
 
       setMessage("Login successfully हो गया।");
 
-      router.push("/dashboard");
-      router.refresh();
+// =========================================
+// ROLE BASED REDIRECT
+// =========================================
+
+if (data.user?.role === "ADMIN") {
+  router.push("/admin");
+} else if (data.user?.role === "FSE") {
+  router.push("/fse/dashboard");
+} else {
+  router.push("/dashboard");
+}
+
+router.refresh();
     } catch (error) {
       console.error("LOGIN ERROR:", error);
 

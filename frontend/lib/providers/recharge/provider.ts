@@ -1,4 +1,5 @@
 import { getProviderForService } from "@/lib/providers/registry";
+
 import type {
   ProviderConfig,
   ProviderHealthResult,
@@ -16,13 +17,10 @@ export class RechargeProvider
 {
   readonly config: ProviderConfig;
 
-  constructor(
-    service: RechargeService
-  ) {
-    const config =
-      getProviderForService(
-        service as ServiceCategory
-      );
+  constructor(service: RechargeService) {
+    const config = getProviderForService(
+      service as ServiceCategory
+    );
 
     if (!config) {
       throw new Error(
@@ -36,51 +34,50 @@ export class RechargeProvider
   async healthCheck(): Promise<
     ProviderResponse<ProviderHealthResult>
   > {
-    const configured =
-      this.config.status !==
-      "NOT_CONFIGURED";
+    const status = this.config.status;
 
+    // Provider configured माना जाएगा जब
+    // वह NOT_CONFIGURED नहीं है.
+    const configured =
+      status !== "NOT_CONFIGURED";
+
+    // TEST_MODE = UAT/Sandbox available
+    // ACTIVE    = Production/Live available
     const available =
-      this.config.status === "ACTIVE";
+      status === "TEST_MODE" ||
+      status === "ACTIVE";
 
     let message =
       "Authorized recharge provider integration required है.";
 
-    if (this.config.status === "ACTIVE") {
+    if (status === "TEST_MODE") {
       message =
-        "Recharge provider active है.";
-    } else if (
-      this.config.status === "TEST_MODE"
-    ) {
+        "Pay2All recharge provider UAT/Test Mode में available है.";
+    } else if (status === "ACTIVE") {
       message =
-        "Recharge provider test mode में है.";
-    } else if (
-      this.config.status === "INACTIVE"
-    ) {
+        "Pay2All recharge provider LIVE mode में active है.";
+    } else if (status === "INACTIVE") {
       message =
-        "Recharge provider inactive है.";
-    } else if (
-      this.config.status === "ERROR"
-    ) {
+        "Recharge provider temporarily inactive है.";
+    } else if (status === "ERROR") {
       message =
         "Recharge provider status error है.";
+    } else if (status === "NOT_CONFIGURED") {
+      message =
+        "Recharge provider अभी configured नहीं है.";
     }
 
     return {
       success: true,
 
-      message:
-        this.config.status ===
-        "NOT_CONFIGURED"
-          ? "Recharge provider अभी configured नहीं है."
-          : message,
+      message,
 
       provider: this.config.name,
 
       data: {
         configured,
         available,
-        status: this.config.status,
+        status,
         message,
       },
     };

@@ -35,7 +35,19 @@ enum UserRole {
   RETAILER
   DISTRIBUTOR
   MASTER_DISTRIBUTOR
+  FSE
   ADMIN
+}
+
+enum RegistrationSource {
+  WEBSITE
+  FSE
+  ADMIN
+}
+
+enum NetworkAssignmentStatus {
+  ASSIGNED
+  PENDING
 }
 
 model user {
@@ -49,10 +61,99 @@ model user {
   mobile    String   @unique(map: "User_mobile_key")
   role      UserRole @default(RETAILER)
 
+  // ==========================================
+  // REGISTRATION / AREA
+  // ==========================================
+  registrationSource RegistrationSource      @default(WEBSITE)
+  assignmentStatus   NetworkAssignmentStatus @default(PENDING)
+  pincode            String?
+
+  // ==========================================
+  // FSE ONBOARDING
+  // किस FSE ने user को onboard किया
+  // ==========================================
+  onboardedById Int?
+
+  onboardedBy    user?  @relation("FSEOnboarding", fields: [onboardedById], references: [id], onDelete: SetNull)
+  onboardedUsers user[] @relation("FSEOnboarding")
+
+  // ==========================================
+  // RETAILER -> DISTRIBUTOR
+  // ==========================================
+  distributorId Int?
+
+  distributor user?  @relation("DistributorRetailers", fields: [distributorId], references: [id], onDelete: SetNull)
+  retailers   user[] @relation("DistributorRetailers")
+
+  // ==========================================
+  // DISTRIBUTOR -> MASTER DISTRIBUTOR
+  // ==========================================
+  masterDistributorId Int?
+
+  masterDistributor user?  @relation("MasterDistributorNetwork", fields: [masterDistributorId], references: [id], onDelete: SetNull)
+  distributors      user[] @relation("MasterDistributorNetwork")
+
+  // ==========================================
+  // DISTRIBUTOR AREA / PINCODE
+  // ==========================================
+  distributorAreas distributorArea[] @relation("DistributorAreas")
+
+  // ==========================================
+  // FSE WORKING AREA / PINCODE
+  // ==========================================
+  fseAreas fseArea[] @relation("FSEAreas")
+
+  // ==========================================
+  // WALLET - EXISTING
+  // ==========================================
   wallet             wallet?
   walletTransactions walletTransaction[]
 
+  @@index([role], map: "User_role_idx")
+  @@index([onboardedById], map: "User_onboardedById_idx")
+  @@index([distributorId], map: "User_distributorId_idx")
+  @@index([masterDistributorId], map: "User_masterDistributorId_idx")
+  @@index([pincode], map: "User_pincode_idx")
+  @@index([assignmentStatus], map: "User_assignmentStatus_idx")
   @@map("User")
+}
+
+model distributorArea {
+  id Int @id @default(autoincrement())
+
+  distributorId Int
+
+  pincode  String
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  distributor user @relation("DistributorAreas", fields: [distributorId], references: [id], onDelete: Cascade)
+
+  @@unique([distributorId, pincode], map: "DistributorArea_distributorId_pincode_key")
+  @@index([pincode, isActive], map: "DistributorArea_pincode_isActive_idx")
+  @@index([distributorId], map: "DistributorArea_distributorId_idx")
+  @@map("DistributorArea")
+}
+
+model fseArea {
+  id Int @id @default(autoincrement())
+
+  fseId Int
+
+  pincode  String
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fse user @relation("FSEAreas", fields: [fseId], references: [id], onDelete: Cascade)
+
+  @@unique([fseId, pincode], map: "FSEArea_fseId_pincode_key")
+  @@index([pincode, isActive], map: "FSEArea_pincode_isActive_idx")
+  @@index([fseId], map: "FSEArea_fseId_idx")
+  @@map("FSEArea")
 }
 
 enum WalletStatus {
@@ -135,6 +236,5 @@ model walletTransaction {
   @@index([source], map: "WalletTransaction_source_idx")
   @@index([status], map: "WalletTransaction_status_idx")
   @@index([createdAt], map: "WalletTransaction_createdAt_idx")
-
   @@map("WalletTransaction")
 }

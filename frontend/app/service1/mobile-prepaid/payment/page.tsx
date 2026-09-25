@@ -132,14 +132,17 @@ function PaymentPageContent() {
         statusData.services?.mobilePrepaid;
 
       const providerReady =
-        prepaidProvider?.success === true &&
-        prepaidProvider?.data?.configured === true &&
-        prepaidProvider?.data?.available === true &&
-        prepaidProvider?.data?.status === "ACTIVE";
+  prepaidProvider?.success === true &&
+  prepaidProvider?.data?.configured === true &&
+  prepaidProvider?.data?.available === true &&
+  (
+    prepaidProvider?.data?.status === "TEST_MODE" ||
+    prepaidProvider?.data?.status === "ACTIVE"
+  );
 
       if (!providerReady) {
         setError(
-          "Mobile Prepaid provider अभी active नहीं है। इसलिए payment शुरू नहीं किया गया है।"
+          "Mobile Prepaid provider अभी available नहीं है। इसलिए payment शुरू नहीं किया गया है।"
         );
 
         setLoading(false);

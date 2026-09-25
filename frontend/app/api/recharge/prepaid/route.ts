@@ -230,15 +230,18 @@ const providerReady =
   providerHealth.success === true &&
   health?.configured === true &&
   health?.available === true &&
-  health?.status === "ACTIVE";
+  (
+    health?.status === "TEST_MODE" ||
+    health?.status === "ACTIVE"
+  );
 
 if (!providerReady) {
   return NextResponse.json(
     {
       success: false,
-      errorCode: "RECHARGE_PROVIDER_NOT_ACTIVE",
+      errorCode: "RECHARGE_PROVIDER_NOT_AVAILABLE",
       message:
-        "Mobile Prepaid provider अभी active नहीं है। इसलिए transaction और payment शुरू नहीं किया गया है।",
+        "Mobile Prepaid provider अभी available नहीं है। इसलिए transaction और payment शुरू नहीं किया गया है।",
     },
     {
       status: 503,
