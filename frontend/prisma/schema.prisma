@@ -109,6 +109,11 @@ model user {
   wallet             wallet?
   walletTransactions walletTransaction[]
 
+  // ==========================================
+  // KYC
+  // ==========================================
+  kyc kyc? @relation("UserKyc")
+
   @@index([role], map: "User_role_idx")
   @@index([onboardedById], map: "User_onboardedById_idx")
   @@index([distributorId], map: "User_distributorId_idx")
@@ -237,4 +242,48 @@ model walletTransaction {
   @@index([status], map: "WalletTransaction_status_idx")
   @@index([createdAt], map: "WalletTransaction_createdAt_idx")
   @@map("WalletTransaction")
+}
+
+// =====================================================
+// KYC
+// =====================================================
+
+enum KycStatus {
+  NOT_SUBMITTED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model kyc {
+  id Int @id @default(autoincrement())
+
+  userId Int @unique(map: "Kyc_userId_key")
+
+  // Basic KYC details
+  panNumber    String?
+  aadhaarLast4 String?
+
+  // Document references / URLs
+  panDocumentUrl  String?
+  aadhaarFrontUrl String?
+  aadhaarBackUrl  String?
+  profilePhotoUrl String?
+
+  // Verification
+  status KycStatus @default(NOT_SUBMITTED)
+
+  rejectionReason String? @db.Text
+
+  verifiedAt DateTime?
+  verifiedBy Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user user @relation("UserKyc", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status], map: "Kyc_status_idx")
+  @@index([createdAt], map: "Kyc_createdAt_idx")
+  @@map("Kyc")
 }
