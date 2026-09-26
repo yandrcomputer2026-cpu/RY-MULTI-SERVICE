@@ -1,3 +1,4 @@
+import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
@@ -77,23 +78,10 @@ export default async function AdminWalletsPage() {
       {/* HEADER */}
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-[1500px] items-center justify-between px-4 py-4 md:px-8">
-          <div className="flex items-center gap-3">
-            <img
-              src="/ry-logo.jpg"
-              alt="RY MULTI SERVICE"
-              className="h-11 w-11 rounded-xl object-cover"
-            />
-
-            <div>
-              <p className="text-lg font-black text-blue-700">
-                RY MULTI SERVICE
-              </p>
-
-              <p className="text-[10px] font-bold tracking-[0.2em] text-emerald-600">
-                ADMINISTRATION PANEL
-              </p>
-            </div>
-          </div>
+  <BrandLogo
+  href="/admin"
+  admin
+/>
 
           <Link
             href="/admin"

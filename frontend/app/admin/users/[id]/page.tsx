@@ -171,9 +171,9 @@ export default async function AdminUserDetailsPage({
       <header className="border-b border-slate-200 bg-white">
   <div className="mx-auto flex min-h-[72px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
     <BrandLogo
-      href="/admin"
-      subtitle="USER MANAGEMENT"
-    />
+  href="/admin"
+  admin
+/>
 
     <Link
       href="/admin/users"

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import BrandLogo from "@/components/BrandLogo";
 
 export const dynamic = "force-dynamic";
 
@@ -80,18 +81,10 @@ export default async function AdminUsersPage() {
 
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex min-h-[72px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-          <div>
-            <Link
-              href="/admin"
-              className="text-lg font-black text-blue-700 sm:text-xl"
-            >
-              RY MULTI SERVICE
-            </Link>
-
-            <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-600">
-              USER MANAGEMENT
-            </p>
-          </div>
+          <BrandLogo
+  href="/admin"
+  admin
+/>
 
           <Link
             href="/admin"
