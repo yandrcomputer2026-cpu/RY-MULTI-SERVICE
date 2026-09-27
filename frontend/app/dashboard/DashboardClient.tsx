@@ -479,6 +479,12 @@ export default function DashboardClient({
             label="KYC"
             collapsed={collapsed}
           />
+          <MenuLink
+  href="/id-card"
+  icon="🪪"
+  label="My ID Card"
+  collapsed={collapsed}
+/>
 
           {user.role === "ADMIN" && (
             <MenuLink

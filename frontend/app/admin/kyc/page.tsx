@@ -192,6 +192,7 @@ export default async function AdminKycPage() {
                   <th className="px-5 py-4">Aadhaar</th>
                   <th className="px-5 py-4">Status</th>
                   <th className="px-5 py-4">Updated</th>
+                  <th className="px-5 py-4">Action</th>
                 </tr>
               </thead>
 
@@ -260,6 +261,14 @@ export default async function AdminKycPage() {
                           ? item.kyc.updatedAt.toLocaleDateString("en-IN")
                           : "—"}
                       </td>
+                      <td className="whitespace-nowrap px-5 py-4">
+  <Link
+    href={`/admin/kyc/${item.id}`}
+    className="inline-flex rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
+  >
+    Review
+  </Link>
+</td>
                     </tr>
                   );
                 })}
@@ -267,7 +276,7 @@ export default async function AdminKycPage() {
                 {users.length === 0 && (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="px-5 py-12 text-center text-slate-500"
                     >
                       कोई user record नहीं मिला।

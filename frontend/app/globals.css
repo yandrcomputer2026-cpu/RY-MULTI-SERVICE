@@ -24,3 +24,43 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* ==========================================
+   RY MULTI SERVICE - ID CARD PRINT
+   ========================================== */
+
+@media print {
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #printable-id-card,
+  #printable-id-card * {
+    visibility: visible !important;
+  }
+
+  #printable-id-card {
+    position: absolute !important;
+    left: 50% !important;
+    top: 20mm !important;
+    transform: translateX(-50%) !important;
+
+    width: 150mm !important;
+    max-width: 150mm !important;
+    margin: 0 !important;
+
+    box-shadow: none !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+}
